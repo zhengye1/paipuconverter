@@ -1,7 +1,6 @@
 import json
-import re
 
-from KobalabPaipu import QiPai, QiPaiWrapper
+from KobalabPaipu import QiPai, QiPaiWrapper, PaiAction, ZimoWrapper
 
 json_str = """{"title":["セガサミーフェニックスNo.1　決定戦","最強戦ルール"],"name":["東城りお","茅森早香","近藤誠一","魚谷侑未"],"rule":{"disp":"セガサミーフェニックスNo.1　決定戦","aka":0},"log":[[[1,0,0],[23000,29000,24000,24000],[26],[35],[39,39,39,35,36,42,28,24,31,31,15,13,18],[12,17,28,32,43,47,11,38,32,38,43,45,45,19,32],[42,15,24,28,28,60,32,60,43,60,60,60,60,"r32",60],[38,34,18,27,42,28,27,18,34,47,37,36,27],[19,41,43,21,23,44,33,47,35,44,29,46,41,21,14,26],[42,60,60,60,19,60,34,60,47,60,60,60,60,"r28",60,60],[21,22,23,24,16,16,17,41,44,25,34,25,29],[38,24,42,16,37,45,12,17,23,25,41,33,35,29,18],[41,29,44,38,60,60,60,34,"r42",60,60,60,60,60,60],[11,12,13,14,14,15,37,22,24,26,27,45,46],[42,22,36,47,13,46,31,19,43,14,11,32,36,22,11],[60,46,45,60,11,24,60,60,60,12,37,46,32,11,60],["和了",[0,-2600,5600,0],[2,1,2,"40符2飜2600点","立直(1飜)","ドラ(1飜)"]]]]}"""
 
@@ -43,27 +42,35 @@ han = s[index + 1: index + 2]
 print(yaku)
 print(han)
 
+SHANGJIA_NOTATION = '-'
+DUIJIA_NOTION = '='
+XIAJIA_NOTATION = '+'
 
-def listHandToKoboStr(hand):
-    koboDict = {'m': [], 'p': [], 's': [], 'z': []}
+
+def listHandToKobaStr(hand):
+    kobaDict = {'m': [], 'p': [], 's': [], 'z': []}
     for num in hand:
+        if (num.isnumeric()):
+            num = int(num)
+        else:
+            return ''
         shu = num % 10
         pai = num // 10
         if pai == 1:
-            koboDict['m'].append(str(shu))
+            kobaDict['m'].append(str(shu))
         if pai == 2:
-            koboDict['p'].append(str(shu))
+            kobaDict['p'].append(str(shu))
         if pai == 3:
-            koboDict['s'].append(str(shu))
+            kobaDict['s'].append(str(shu))
         if pai == 4:
-            koboDict['z'].append(str(shu))
-    koboHand = ''
-    for key, value in koboDict.items():
+            kobaDict['z'].append(str(shu))
+    kobaHand = ''
+    for key, value in kobaDict.items():
         if value:
             value.sort()
-            koboHand += (key + ''.join(value))
+            kobaHand += (key + ''.join(value))
 
-    return koboHand
+    return kobaHand
 
 
 def tenhouNumToPai(tenhouNum, pai=None):
@@ -95,6 +102,50 @@ def tenhouNumToPai(tenhouNum, pai=None):
     return mian + str(shu) + tsumokiri + riichi
 
 
+def fulou(tenhouPai):
+    fulouDict = {}
+    # for chi
+    if 'c' in tenhouPai:
+        fulouDict['showHand'] = [tenhouPai[3:5], tenhouPai[5:7]]
+        kobaFulou = listHandToKobaStr([tenhouPai[1:3], tenhouPai[3:5], tenhouPai[5:7]])
+        kobaFulou = kobaFulou[0:2] + SHANGJIA_NOTATION + kobaFulou[2:]
+        fulouDict['kobaStr'] = kobaFulou
+        return fulouDict
+
+    if 'p' in tenhouPai:
+        pIndex = tenhouPai.index('p')
+        fulouDict['showHand'] = [tenhouPai[pIndex + 1:pIndex + 3]] * 2
+        kobaFulou = listHandToKobaStr([tenhouPai[pIndex + 1:pIndex + 3]] * 3)
+        if pIndex == 0:
+            kobaFulou = kobaFulou[0:2] + SHANGJIA_NOTATION + kobaFulou[2:]
+        elif pIndex == 2:
+            kobaFulou = kobaFulou[0:3] + DUIJIA_NOTION + kobaFulou[3:]
+        elif pIndex == 4:
+            kobaFulou = kobaFulou[0:4] + XIAJIA_NOTATION + kobaFulou[4:]
+        fulouDict['kobaStr'] = kobaFulou
+        return fulouDict
+
+    if 'k' in tenhouPai:
+        kIndex = tenhouPai.index('k')
+        fulouDict['showHand'] = [tenhouPai[kIndex + 1:kIndex + 3]] * 3
+        kobaFulou = listHandToKobaStr([tenhouPai[kIndex + 1:kIndex + 3]] * 4)
+        if kIndex == 0:
+            kobaFulou = kobaFulou[0:2] + SHANGJIA_NOTATION + kobaFulou[2:]
+        elif kIndex == 2:
+            kobaFulou = kobaFulou[0:3] + DUIJIA_NOTION + kobaFulou[3:]
+        elif kIndex == 4:
+            kobaFulou = kobaFulou[0:4] + XIAJIA_NOTATION + kobaFulou[4:]
+        fulouDict['kobaStr'] = kobaFulou
+        return fulouDict
+
+    if 'a' in tenhouPai:
+        aIndex = tenhouPai.index('a')
+        fulouDict['showHand'] = [tenhouPai[aIndex + 1:aIndex + 3]] * 4
+        kobaFulou = listHandToKobaStr([tenhouPai[aIndex + 1:aIndex + 3]] * 4)
+        fulouDict['kobaStr'] = kobaFulou
+        return fulouDict
+
+
 def terminateCondition(mopaiIndex, mopaiLength, dapaiIndex, dapaiLength):
     terminateDict = {"terminate": False, "terminateBy": ""}
     terminateByRonOrRyukyoku = (
@@ -122,6 +173,9 @@ def terminateCondition(mopaiIndex, mopaiLength, dapaiIndex, dapaiLength):
                       (all(v == mopaiLength[3] for v in [mopaiIndex[3], mopaiLength]) and
                        all(v == dapaiLength[3] for v in [dapaiIndex[3], dapaiLength]) and
                        mopaiIndex[3] - dapaiIndex[3] == 1)
+    if terminateByZimo:
+        terminateDict['terminate'] = True
+        terminateDict['terminateBy'] = 'Z'
 
 
 def parseKyoku(kyokuReport):
@@ -143,7 +197,6 @@ def parseKyoku(kyokuReport):
     else:
         fubaopai = None
 
-
     # 4,7,10,13 is the open hand
     indexSequence = [4, 7, 10, 13]
 
@@ -162,8 +215,8 @@ def parseKyoku(kyokuReport):
                      [h for h in northStartHand]]
 
     # for kobolab shoupai
-    shoupai = [listHandToKoboStr(eastStartHand), listHandToKoboStr(southStartHand), listHandToKoboStr(westStardHand),
-               listHandToKoboStr(northStartHand)]
+    shoupai = [listHandToKobaStr(eastStartHand), listHandToKobaStr(southStartHand), listHandToKobaStr(westStardHand),
+               listHandToKobaStr(northStartHand)]
 
     qipai = QiPai(changfeng, jushu, changbang, lizhibang, defen, baopai, fubaopai, shoupai)
     qiPaiWrapper = QiPaiWrapper(qipai)
@@ -193,12 +246,19 @@ def parseKyoku(kyokuReport):
     dapai = ''
     gameStep = [qiPaiWrapper]
 
-    while not terminateCondition(mopaiIndex, mopaiLength, dapaiIndex, dapaiLength):
+    while not terminateCondition(mopaiIndex, mopaiLength, dapaiIndex, dapaiLength)['terminate']:
         # mopai
         mopai = mopaiAction[currentPlayerIndex][mopaiIndex[currentPlayerIndex]]
 
+        mopaiIndex[currentPlayerIndex] += 1
+        terminateDict = terminateCondition(mopaiIndex,mopaiLength,dapaiIndex,dapaiLength)
+        isTerminate = terminateDict['terminate']
+        # if is zimo
+        if isTerminate and terminateDict['terminateBy'] == 'Z':
+            zimo = ZimoWrapper(PaiAction(currentPlayerIndex, tenhouNumToPai(mopai)))
+            gameStep.append(zimo)
+
         # dpai
         # other play chi pon kang?
-            # currentPlayerIndex swtich to that player
+        # currentPlayerIndex swtich to that player
         # otherwise currentPlayerIndex switch add 1
-
