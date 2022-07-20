@@ -14,7 +14,7 @@ class MahjongTransfer:
      ronTile(int) : the ron tile
     """
 
-    def __init__(self, innerTiles=[], outerTiles=[], ronTile=0):
+    def __init__(self, innerTiles=[], outerTiles=[], ronTile=0, ronFormat='Z'):
         if len(innerTiles) + len(outerTiles) * 3 != 14 or (ronTile > 0 and ronTile not in innerTiles):
             raise MahjongNumberException
 
@@ -25,6 +25,7 @@ class MahjongTransfer:
         self.souzi = []
         self.jipai = []
         self.akaSet = []
+        self.ronFormat = ronFormat
 
         # need this part because for combine
         for tile in self.innerTiles:
@@ -217,6 +218,8 @@ class MahjongTransfer:
             mahjongGroup.fu = 25
             mahjongGroup.ronTile = self.ronTile
             mahjongGroup.akaSet = self.akaSet
+            if self.ronFormat == 'R':
+                mahjongGroup.isZimo = False
             tempGroupResult.append(mahjongGroup)
 
         # check kokushi
@@ -224,6 +227,8 @@ class MahjongTransfer:
         if mahjongGroup is not None:
             mahjongGroup.fu = 20
             mahjongGroup.ronTile = self.ronTile
+            if self.ronFormat == 'R':
+                mahjongGroup.isZimo = False
             tempGroupResult.append(mahjongGroup)
 
         finalSetGroup = []
@@ -232,7 +237,7 @@ class MahjongTransfer:
         finalNormalGroup = self.finalTiles()
 
         # cover 两杯口情况
-        if finalNormalGroup is not None:
+        if len(finalNormalGroup) != 0:
             if len(tempGroupResult) != 0 and tempGroupResult[0].yakuType is SEVEN_PAIR:
                 del tempGroupResult[0]
 
@@ -251,7 +256,10 @@ class MahjongTransfer:
 
                 outerLst.sort()
                 if outerLst[0] == (outerLst[1] - 1) == (outerLst[2] - 2):
-                    fulouMianzi.append(Mianzi(outerLst[0], FULOU, SHUNZI))
+                    shunziMianzi = Mianzi(outerLst[0], FULOU, SHUNZI)
+                    shunziMianzi.fulou = True
+                    fulouMianzi.append(shunziMianzi)
+
                 else:
                     if len(outerLst) == 4:
                         kangMianzi = Mianzi(outerLst[0], FULOU, GANG)
@@ -274,18 +282,24 @@ class MahjongTransfer:
                     mahjongGroup.mianzis.append(Mianzi(g[index], INNER, KEZI))
             mahjongGroup.ronTile = self.ronTile
             mahjongGroup.akaSet = self.akaSet
-            mahjongGroup.tiles = copy.deepcopy(self.innerTiles) + copy.deepcopy(self.outerTiles)
+            mahjongGroup.tiles = copy.deepcopy(self.innerTiles)
+            for outerLst in self.outerTiles:
+                mahjongGroup.tiles.extend(outerLst[1:])
+
+            if self.ronFormat == 'R':
+                mahjongGroup.isZimo = False
             [mahjongGroup.mianzis.append(fulouM) for fulouM in fulouMianzi]
+            mahjongGroup.updateMenzenStatus()
 
             tempGroupResult.append(mahjongGroup)
         [finalSetGroup.append(x) for x in tempGroupResult if x not in finalSetGroup]
         return finalSetGroup
 
 
-transfer = MahjongTransfer([11, 12, 12, 13, 13, 14, 25, 26, 27, 37, 37], [['a', 10, 15, 15, 15]], 12)
-transfer.finalTiles()
+transfer = MahjongTransfer([11, 11, 12, 12, 15, 15, 16, 13, 13, 16, 18, 18, 36, 36], [], 11)
 group = transfer.toMahjongGroup()
 for g in group:
     print(g)
     print("Ron Type: " + str(g.ronType()))
     print("=================")
+
