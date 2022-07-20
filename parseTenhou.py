@@ -48,6 +48,10 @@ gameReport2 =  json.loads(json_str)
 SHANGJIA_NOTATION = '-'
 DUIJIA_NOTION = '='
 XIAJIA_NOTATION = '+'
+EAST = 0
+SOUTH = 1
+WEST = 2
+NORTH = 3
 
 
 def listHandToKobaStr(hand):

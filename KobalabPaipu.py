@@ -93,7 +93,8 @@ class GangZimoWrapper:
 
 
 class Hule:
-    def __init__(self, l=None, shoupai=None, baojia=None, fubaopai=None, fu=None, fanshu=None, damanguan=None, defen=None, hupai=None, fenpei=None):
+    def __init__(self, l=None, shoupai=None, baojia=None, fubaopai=None, fu=None, fanshu=None, damanguan=None,
+                 defen=None, hupai=None, fenpei=None):
         self.l = l
         self.shoupai = shoupai
         self.baojia = baojia

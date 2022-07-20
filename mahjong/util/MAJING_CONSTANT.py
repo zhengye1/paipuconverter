@@ -1,0 +1,18 @@
+# 面子类型
+SHUNZI = 0
+KEZI = 1
+GANG = 2
+
+# 和牌类型
+LIANGMIAN = 0
+SHUANGPENG = 1
+# 单骑，坎张，边张
+SINGLE_WAIT = 2
+
+# YAKU_TYPE
+SEVEN_PAIR = 7
+KOKUSHI = 13
+NORMAL = 0
+
+INNER = 0
+FULOU = 1
