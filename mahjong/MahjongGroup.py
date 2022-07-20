@@ -36,7 +36,7 @@ class MahjongGroup:
         if self.ronTile == self.duizi:
             ronType.append(SINGLE_WAIT)
         for mianzi in self.mianzis:
-            if mianzi.mianziType == KEZI and self.ronTile in mianzi:
+            if mianzi.mianziType == KEZI and self.ronTile in mianzi.toList():
                 ronType.append(SHUANGPENG)
             if mianzi.mianziType == SHUNZI:
                 if self.ronTile == mianzi.startTile:

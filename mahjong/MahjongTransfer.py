@@ -3,7 +3,7 @@ import copy
 from mahjong.MahjongGroup import MahjongGroup
 from mahjong.Mianzi import Mianzi
 from mahjong.exception.MahjongException import MahjongNumberException, TileSplitException
-from mahjong.util.MAJING_CONSTANT import SEVEN_PAIR, KOKUSHI, INNER, SHUNZI, KEZI
+from mahjong.util.MAJING_CONSTANT import SEVEN_PAIR, KOKUSHI, INNER, SHUNZI, KEZI, FULOU, GANG
 
 
 class MahjongTransfer:
@@ -236,6 +236,32 @@ class MahjongTransfer:
             if len(tempGroupResult) != 0 and tempGroupResult[0].yakuType is SEVEN_PAIR:
                 del tempGroupResult[0]
 
+        # fulou part
+        # outerTiles should have the format [cpka, t, t, t, (t)]
+        fulouMianzi = []
+        for lst in self.outerTiles:
+            if len(lst) != 0:
+                outerLst = copy.deepcopy(lst[1:])
+                for x in outerLst:
+                    if x % 10 == 0:
+                        aka = x
+                        outerLst.remove(x)
+                        x += 5
+                        outerLst.append(x)
+
+                outerLst.sort()
+                if outerLst[0] == (outerLst[1] - 1) == (outerLst[2] - 2):
+                    fulouMianzi.append(Mianzi(outerLst[0], FULOU, SHUNZI))
+                else:
+                    if len(outerLst) == 4:
+                        kangMianzi = Mianzi(outerLst[0], FULOU, GANG)
+                        if lst[0] != 'a':
+                            kangMianzi.fulou = True
+                        fulouMianzi.append(kangMianzi)
+
+                    else:
+                        fulouMianzi.append(Mianzi(outerLst[0], FULOU, KEZI))
+
         for g in finalNormalGroup:
             mahjongGroup = MahjongGroup()
             length = len(g) // 3
@@ -249,13 +275,14 @@ class MahjongTransfer:
             mahjongGroup.ronTile = self.ronTile
             mahjongGroup.akaSet = self.akaSet
             mahjongGroup.tiles = copy.deepcopy(self.innerTiles) + copy.deepcopy(self.outerTiles)
+            [mahjongGroup.mianzis.append(fulouM) for fulouM in fulouMianzi]
+
             tempGroupResult.append(mahjongGroup)
         [finalSetGroup.append(x) for x in tempGroupResult if x not in finalSetGroup]
-
         return finalSetGroup
 
 
-transfer = MahjongTransfer([11, 11, 12, 12, 13, 13, 34, 34, 35, 35, 36, 36, 41, 41], [], 11)
+transfer = MahjongTransfer([11, 12, 12, 13, 13, 14, 25, 26, 27, 37, 37], [['a', 10, 15, 15, 15]], 12)
 transfer.finalTiles()
 group = transfer.toMahjongGroup()
 for g in group:

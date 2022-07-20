@@ -2,12 +2,12 @@ from mahjong.util.MAJING_CONSTANT import *
 
 
 class Mianzi:
-    def __init__(self, startTile, status, mianziType, aka=0, fulou=False):
+    def __init__(self, startTile, status, mianziType, aka=0):
         self.startTile = startTile
         self.status = status
         self.mianziType = mianziType
+        self.fulou = False
         self.aka = aka
-        self.fulou = fulou
         self.lst = self.toList()
 
     def toList(self):
@@ -24,4 +24,9 @@ class Mianzi:
         return lst
 
     def __str__(self):
-        return "Mianzi(" + str(self.lst) + ")"
+        baseMessage = "Mianzi(" + str(self.lst) + ") "
+        if self.fulou:
+            baseMessage = "Open " + baseMessage
+        else:
+            baseMessage = "Closed " + baseMessage
+        return baseMessage
