@@ -1,5 +1,6 @@
 from KobalabPaipu import Yaku
-from mahjong.util.MAJING_CONSTANT import LIANGMIAN, NORMAL, SEVEN_PAIR, SINGLE_WAIT, KOKUSHI, KEZI, SHUANGPENG, SHUNZI
+from mahjong.util.MAJING_CONSTANT import LIANGMIAN, NORMAL, SEVEN_PAIR, SINGLE_WAIT, KOKUSHI, KEZI, SHUANGPENG, SHUNZI, \
+    GANG
 from mahjong.util.YAKU_LIST import YAKU_LIST, YAKUHAI
 
 
@@ -33,6 +34,74 @@ class MahjongGroup:
         self.yakuType = NORMAL
         self.isMenzen = True
         self.ippbeikoIndex = 0
+        self.isPinfuKei = False
+        self.doubleWind = False  # 连风雀头
+        self.kazoeYakuman = False
+
+        # https://majyan-item.com/tensu-keisan-kaisetu/
+
+    def fuCalculation(self, ronType):
+        if self.isPinfuKei:
+            if self.isZimo:
+                self.fu = 20
+            else:
+                self.fu = 30
+        elif self.yakuType == SEVEN_PAIR:
+            self.fu = 25
+        else:
+            if self.isMenzen:
+                if self.isZimo:
+                    self.fu = 30
+                else:
+                    self.fu = 40
+            else:
+                self.fu = 30
+
+            # 算有没有跳符情况
+            jumpFu = 0
+            if self.doubleWind and self.placeWind == self.duizi and self.selfWind == self.duizi:
+                jumpFu += 2
+            else:
+                if self.placeWind == self.duizi:
+                    jumpFu += 2
+                if self.selfWind == self.duizi:
+                    jumpFu += 2
+            if 45 <= self.duizi <= 47:
+                jumpFu += 2
+
+            if ronType == SINGLE_WAIT:
+                jumpFu += 2
+
+            if self.isZimo:
+                jumpFu += 2
+
+            for mianzi in self.mianzis:
+                if mianzi.mianziType == KEZI:
+                    if mianzi.fulou:
+                        if 2 <= mianzi.startTile % 10 <= 8 and not mianzi.startTile / 10 == 4:
+                            jumpFu += 2
+                        else:
+                            jumpFu += 4
+                    else:
+                        if 2 <= mianzi.startTile % 10 <= 8 and not mianzi.startTile / 10 == 4:
+                            jumpFu += 4
+                        else:
+                            jumpFu += 8
+                elif mianzi.mianziType == GANG:
+                    if mianzi.fulou:
+                        if 2 <= mianzi.startTile % 10 <= 8 and not mianzi.startTile / 10 == 4:
+                            jumpFu += 8
+                        else:
+                            jumpFu += 16
+                    else:
+                        if 2 <= mianzi.startTile % 10 <= 8 and not mianzi.startTile / 10 == 4:
+                            jumpFu += 16
+                        else:
+                            jumpFu += 32
+
+            # 看看是跳了几级
+            jumpLevel = (jumpFu - 2) // 10 * 10
+            self.fu += jumpLevel
 
     def updateMenzenStatus(self):
         if self.yakuType != NORMAL:  # 七对子国士肯定是门清
@@ -108,7 +177,8 @@ class MahjongGroup:
     def checkPinfu(self, ronType):
         if self.isMenzen and self.checkAllClosed() and self.checkAllShunzi() and ronType == LIANGMIAN and \
                 (41 <= self.duizi <= 44 and self.duizi != self.selfWind and self.duizi != self.placeWind):
-            self.yakus.append(Yaku(YAKU_LIST[3]), 1)
+            self.yakus.append(Yaku(YAKU_LIST[3], 1))
+            self.isPinfuKei = True
 
     def checkTanyao(self):
         for tile in self.tiles:
@@ -137,9 +207,9 @@ class MahjongGroup:
                 # 自风
                 if mianzi.startTile == self.selfWind:
                     self.yakus.append(Yaku(YAKU_LIST[6] + ' ' + YAKUHAI[1], 1))
-                # 役牌
-                if 45 <= mianzi.startTile <= 47:
-                    self.yakus.append(Yaku(YAKU_LIST[6] + ' ' + YAKUHAI[mianzi.startTile % 10 - 3], 1))
+                    # 役牌
+                    if 45 <= mianzi.startTile <= 47:
+                        self.yakus.append(Yaku(YAKU_LIST[6] + ' ' + YAKUHAI[mianzi.startTile % 10 - 3], 1))
 
     def checkLastCardAgari(self):
         if self.isHaidi:
