@@ -6,6 +6,9 @@ from mahjong.util.YAKU_LIST import YAKU_LIST, YAKUHAI
 
 class MahjongGroup:
     def __init__(self):
+        # 记录双风2符，切上满贯，累计役满，多倍役满，复合役满，岭上自摸2符，绿一色带发（连盟规则）
+        self.ruleSet = {"doubleWind": False, "kiriage": False, "kazoeyakuman": False, "baiYakuman": False,
+                        "multiYakuman": True, "lingsyantsumo2fu": True, "RyuiisouWithHatsu": False}
         self.fu = 20
         self.fan = 0
         self.ronTile = 0
@@ -29,17 +32,12 @@ class MahjongGroup:
         self.dora = []
         self.uraDora = []
         self.tiles = []
-        self.baiYakuman = False
-        self.kiriage = False
         self.yakuType = NORMAL
         self.isMenzen = True
-        self.ippbeikoIndex = 0
+        self.ippbeikoIndex = -1
         self.isPinfuKei = False
-        self.doubleWind = False  # 连风雀头
-        self.kazoeYakuman = False
 
-        # https://majyan-item.com/tensu-keisan-kaisetu/
-
+    # https://majyan-item.com/tensu-keisan-kaisetu/
     def fuCalculation(self, ronType):
         if self.isPinfuKei:
             if self.isZimo:
@@ -59,12 +57,12 @@ class MahjongGroup:
 
             # 算有没有跳符情况
             jumpFu = 0
-            if self.doubleWind and self.placeWind == self.duizi and self.selfWind == self.duizi:
+            if self.ruleSet['doubleWind'] and self.placeWind + 41 == self.duizi and self.selfWind + 41 == self.duizi:
                 jumpFu += 2
             else:
-                if self.placeWind == self.duizi:
+                if self.placeWind + 41 == self.duizi:
                     jumpFu += 2
-                if self.selfWind == self.duizi:
+                if self.selfWind + 41 == self.duizi:
                     jumpFu += 2
             if 45 <= self.duizi <= 47:
                 jumpFu += 2
@@ -112,7 +110,7 @@ class MahjongGroup:
                     self.isMenzen = False
                     break
 
-    def ronType(self):
+    def getRonType(self):
         ronType = []
         if self.yakuType == SEVEN_PAIR or self.yakuType == KOKUSHI:
             ronType.append(SINGLE_WAIT)
@@ -140,6 +138,17 @@ class MahjongGroup:
         return finalRonType
 
     def checkYakus(self):
+        checkRiichi()
+        checkDoubleRiichi()
+        checkIpptatsu()
+        checkMenzenTsumo()
+        checkPinfu()
+        checkTanyao()
+        checkYakuHai()
+        checkLastCardAgari()
+        checkQiangGang()
+        checkLingShang()
+
         pass
 
     def checkRiichi(self):
@@ -164,19 +173,9 @@ class MahjongGroup:
                 return False
         return True
 
-    def checkAllClosed(self):
-        for mianzi in self.mianzis:
-            if mianzi.fulou:
-                return False
-        return True
-
-    def checkMenzenZimo(self):
-        if self.isMenzen and self.isZimo:
-            self.yakus.append(Yaku(YAKU_LIST[2], 1))
-
     def checkPinfu(self, ronType):
-        if self.isMenzen and self.checkAllClosed() and self.checkAllShunzi() and ronType == LIANGMIAN and \
-                (41 <= self.duizi <= 44 and self.duizi != self.selfWind and self.duizi != self.placeWind):
+        if self.isMenzen and self.checkAllShunzi() and ronType == LIANGMIAN and \
+                41 <= self.duizi <= 44 and self.duizi != self.selfWind + 41 and self.duizi != self.placeWind + 41:
             self.yakus.append(Yaku(YAKU_LIST[3], 1))
             self.isPinfuKei = True
 
