@@ -296,7 +296,7 @@ class MahjongTransfer:
         return finalSetGroup
 
 
-transfer = MahjongTransfer([28, 28, 32, 32, 32, 32, 33, 33, 33, 34, 34, 34, 34, 33], [], 33)
+transfer = MahjongTransfer([11, 11, 21, 29, 31, 39, 41, 42, 43, 44, 45, 46, 47, 19], [], 19)
 group = transfer.toMahjongGroup()
 for g in group:
     print("Ron Type: " + str(g.getRonType()))

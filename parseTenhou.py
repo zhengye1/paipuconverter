@@ -42,8 +42,15 @@ yaku = s[0:index]
 han = s[index + 1: index + 2]
 print(yaku)
 print(han)
-json_str = """{"title":["セガサミーフェニックスNo.1　決定戦","最強戦ルール"],"name":["東城りお","茅森早香","近藤誠一","魚谷侑未"],"rule":{"disp":"セガサミーフェニックスNo.1　決定戦","aka":0},"log":[[[6,0,0],[33700,27100,28100,11100],[38],[],[16,16,15,45,45,12,39,37,33,26,27,41,44],[29,14,24,39,33,29,35,42,13,47,39,21,32,32,35,36,23,13],[41,29,44,12,24,60,16,60,35,60,37,27,33,33,26,35,14,32],[21,23,24,28,44,45,45,31,34,36,37,37,13],[22,41,31,43,43,25,24,15,34,43,47,38,21,19,41,34,"c141315"],[31,60,60,60,60,28,60,25,44,60,37,47,34,34,60,60,19],[46,27,35,19,23,25,47,11,11,14,22,18,28],[38,25,29,37,42,17,11,21,31,27,27,18,33,18,26,17,17,22],[46,47,25,14,35,25,60,"r42",60,60,60,60,60,60,60,60,60,60],[11,12,13,14,18,19,47,25,24,32,32,46,46],[31,26,29,38,35,19,22,44,41,14,36,44,42,28,43,23,36,39],[47,31,60,19,18,60,11,35,46,46,44,60,60,25,26,43,14,22],["流局",[-1500,1500,1500,-1500]]]]}"""
-gameReport2 =  json.loads(json_str)
+json_str = """{"title":["セガサミーフェニックスNo.1　決定戦","最強戦ルール"],"name":["東城りお","茅森早香","近藤誠一","魚谷侑未"],
+"rule":{"disp":"セガサミーフェニックスNo.1　決定戦","aka":0},"log":[[[6,0,0],[33700,27100,28100,11100],[38],[],[16,16,15,45,45,12,
+39,37,33,26,27,41,44],[29,14,24,39,33,29,35,42,13,47,39,21,32,32,35,36,23,13],[41,29,44,12,24,60,16,60,35,60,37,27,
+33,33,26,35,14,32],[21,23,24,28,44,45,45,31,34,36,37,37,13],[22,41,31,43,43,25,24,15,34,43,47,38,21,19,41,34,
+"c141315"],[31,60,60,60,60,28,60,25,44,60,37,47,34,34,60,60,19],[46,27,35,19,23,25,47,11,11,14,22,18,28],[38,25,29,
+37,42,17,11,21,31,27,27,18,33,18,26,17,17,22],[46,47,25,14,35,25,60,"r42",60,60,60,60,60,60,60,60,60,60],[11,12,13,
+14,18,19,47,25,24,32,32,46,46],[31,26,29,38,35,19,22,44,41,14,36,44,42,28,43,23,36,39],[47,31,60,19,18,60,11,35,46,
+46,44,60,60,25,26,43,14,22],["流局",[-1500,1500,1500,-1500]]]]} """
+gameReport2 = json.loads(json_str)
 
 SHANGJIA_NOTATION = '-'
 DUIJIA_NOTION = '='
@@ -87,7 +94,7 @@ def tenhouNumToPai(tenhouNum, pai=None):
     if type(tenhouNum) == str and 'r' in tenhouNum:
         wordToConvert = tenhouNum[1:]
         riichi = '*'
-        if (pai == int(wordToConvert)):
+        if pai == int(wordToConvert):
             tsumokiri = '_'
     elif tenhouNum == 60:
         wordToConvert = pai
@@ -201,7 +208,7 @@ def getFuFan(fuFan):
     if '符' in fuFan:
         fu = int(fuFan[0:fuFan.index('符')])
         fan = int(fuFan[fuFan.index('符') + 1:fuFan.index('飜')])
-        defen = fuFan[fuFan.index('飜')+1:fuFan.index('点')]
+        defen = fuFan[fuFan.index('飜') + 1:fuFan.index('点')]
     else:
         pointIndex = re.search(r"\d", fuFan)
         defen = fuFan[pointIndex.start():fuFan.index('点')]
@@ -214,6 +221,7 @@ def getFuFan(fuFan):
         defen = int(lowPay) * 2 + int(highPay)
 
     return {'fu': fu, 'fan': fan, 'defen': int(defen)}
+
 
 def parseKyoku(kyokuReport):
     # return Qipai object
@@ -310,11 +318,11 @@ def parseKyoku(kyokuReport):
             fenpei = gameResult[index]
             fenpei = fenpei[jushu:] + fenpei[0:jushu]
             print(fenpei)
-            fuFan = gameResult[index+1][3]
+            fuFan = gameResult[index + 1][3]
             if '符' in fuFan:
                 fu = fuFan[0:fuFan.index('符')]
                 fan = fuFan[fuFan.index('符') + 1:fuFan.index('飜')]
-                defen = fuFan[fuFan.index('飜')+1:fuFan.index('点')]
+                defen = fuFan[fuFan.index('飜') + 1:fuFan.index('点')]
 
             if terminateDict['terminateBy'] == 'Z':
                 # find the correct zimo place
