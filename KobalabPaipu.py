@@ -143,3 +143,6 @@ class Yaku:
 
     def encode(self):
         return ignoreNoneEncode(self.__dict__)
+
+    def __str__(self):
+        return "{name: " + self.name + " fanshu: " + str(self.fanshu) + "}"

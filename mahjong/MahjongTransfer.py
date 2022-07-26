@@ -3,7 +3,7 @@ import copy
 from mahjong.MahjongGroup import MahjongGroup
 from mahjong.Mianzi import Mianzi
 from mahjong.exception.MahjongException import MahjongNumberException, TileSplitException
-from mahjong.util.MAJING_CONSTANT import SEVEN_PAIR, KOKUSHI, INNER, SHUNZI, KEZI, FULOU, GANG
+from mahjong.util.MAJING_CONSTANT import SEVEN_PAIR, KOKUSHI, INNER, SHUNZI, KEZI, FULOU, GANG, SOUTH, EAST, NORTH, WEST
 
 
 class MahjongTransfer:
@@ -28,12 +28,12 @@ class MahjongTransfer:
         self.ronFormat = ronFormat
 
         # need this part because for combine
-        for tile in self.innerTiles:
+        for i, tile in enumerate(self.innerTiles):
             if tile % 10 == 0:
                 self.akaSet.append(tile)
                 self.innerTiles.remove(tile)
                 tile += 5
-                self.innerTiles.append(tile)
+                self.innerTiles.insert(i, tile)
 
         if ronTile % 10 == 0:
             self.ronTile = ronTile + 5
@@ -247,12 +247,12 @@ class MahjongTransfer:
         for lst in self.outerTiles:
             if len(lst) != 0:
                 outerLst = copy.deepcopy(lst[1:])
-                for x in outerLst:
-                    if x % 10 == 0:
-                        aka = x
-                        outerLst.remove(x)
-                        x += 5
-                        outerLst.append(x)
+                for i, tile in enumerate(outerLst):
+                    if tile % 10 == 0:
+                        self.akaSet.append(tile)
+                        outerLst.remove(tile)
+                        tile += 5
+                        outerLst.insert(i, tile)
 
                 outerLst.sort()
                 if outerLst[0] == (outerLst[1] - 1) == (outerLst[2] - 2):
@@ -268,7 +268,9 @@ class MahjongTransfer:
                         fulouMianzi.append(kangMianzi)
 
                     else:
-                        fulouMianzi.append(Mianzi(outerLst[0], FULOU, KEZI))
+                        keziMianzi = Mianzi(outerLst[0], FULOU, KEZI)
+                        keziMianzi.fulou = True
+                        fulouMianzi.append(keziMianzi)
 
         for g in finalNormalGroup:
             mahjongGroup = MahjongGroup()
@@ -282,10 +284,11 @@ class MahjongTransfer:
                     mahjongGroup.mianzis.append(Mianzi(g[index], INNER, KEZI))
             mahjongGroup.ronTile = self.ronTile
             mahjongGroup.akaSet = self.akaSet
-            mahjongGroup.tiles = copy.deepcopy(self.innerTiles)
+            mahjongGroup.tiles = copy.deepcopy(self.innerTiles[0:-1])  # 确保把和牌的放在最后一个上
             for outerLst in self.outerTiles:
                 mahjongGroup.tiles.extend(outerLst[1:])
 
+            mahjongGroup.tiles.append(self.ronTile)
             if self.ronFormat == 'R':
                 mahjongGroup.isZimo = False
             [mahjongGroup.mianzis.append(fulouM) for fulouM in fulouMianzi]
@@ -296,12 +299,12 @@ class MahjongTransfer:
         return finalSetGroup
 
 
-transfer = MahjongTransfer([11, 11, 21, 29, 31, 39, 41, 42, 43, 44, 45, 46, 47, 19], [], 19)
+transfer = MahjongTransfer([26, 26, 26, 27, 28, 31, 32, 33, 34, 35, 37, 38, 39, 36], [], 36)
+transfer.ronFormat = 'Z'
 group = transfer.toMahjongGroup()
 for g in group:
-    print("Ron Type: " + str(g.getRonType()))
-    for ronType in g.getRonType():
-        g.fuCalculation(ronType)
-
+    g.setSpecial(EAST, SOUTH, isRiichi=True)
+    g.setDora([44], [])
+    g.finalCheck()
     print(g)
     print("=================")

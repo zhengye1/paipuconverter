@@ -4,3 +4,4 @@ class MahjongNumberException(Exception):
 
 class TileSplitException(Exception):
     pass
+

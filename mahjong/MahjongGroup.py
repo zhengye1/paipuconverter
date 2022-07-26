@@ -1,9 +1,10 @@
 import copy
+import math
 
 from KobalabPaipu import Yaku
 from MahjongUtil import OYA_POINT, KODOMO_POINT
 from mahjong.util.MAJING_CONSTANT import LIANGMIAN, NORMAL, SEVEN_PAIR, SINGLE_WAIT, KOKUSHI, KEZI, SHUANGPENG, SHUNZI, \
-    GANG, EAST, OYA_YAKUMAN, KODOMO_YAKUMAN
+    GANG, EAST, OYA_YAKUMAN, KODOMO_YAKUMAN, HATSU
 from mahjong.util.YAKU_LIST import YAKU_LIST, YAKUHAI
 
 
@@ -14,6 +15,8 @@ class MahjongGroup:
                         "multiYakuman": True, "lingsyantsumo2fu": True, "RyuiisouWithHatsu": False}
         self.fu = 20
         self.fan = 0
+        self.score = 0
+        self.ronType = 0
         self.ronTile = 0
         self.akaSet = []
         self.yakus = []
@@ -40,9 +43,66 @@ class MahjongGroup:
         self.ippbeikoIndex = -1
         self.chantaIndex = -1
         self.houRouTouIndex = -1
-        self.ittsuIndex = -1
-        self.isIttShouku = False
+        self.iishoukuIndex = -1
         self.isPinfuKei = False
+
+    def setDora(self, dora=[], ura=[]):
+        self.dora = dora
+        self.uraDora = ura
+
+    def setSpecial(self, selfWind, placeWind, isRiichi=False, isWReach=False,
+                   isYifa=False, isLingShang=False, isQiangGang=False, tianhe=False, dihe=False):
+        self.isTianhe = tianhe
+        self.isDihe = dihe
+        self.selfWind = selfWind
+        self.placeWind = placeWind
+        self.isRiichi = isRiichi
+        self.isWReach = isWReach
+        self.isYifa = isYifa
+        self.isLingShang = isLingShang
+        self.isQiangGang = isQiangGang
+
+    def finalCheck(self):
+        ronType = self.getRonType()
+        tempFu = tempFan = tempScore = 0
+        temp_yaku = []
+        for rt in ronType:
+            # 每次for loop要reset一下以下符数翻数还有分数，因为直接改在了自身object 上
+            self.fan = 0
+            self.fu = 0
+            self.score = 0
+            self.checkYakus(rt)
+            self.fuCalculation(rt)
+            self.score = self.getPoint()
+            if len(self.yakumans) != 0:
+                self.fu = None
+                self.fan = None
+                self.yakus = self.yakumans
+                return
+
+            if tempScore == self.score:
+                if self.fan > tempFan:
+                    tempFan = self.fan
+                    tempFu = self.fu
+                    temp_yaku = copy.deepcopy(self.yakus)
+                elif self.fan == tempFan:
+                    if self.fu >= tempFu:
+                        tempFan = self.fan
+                        tempFu = self.fu
+                        temp_yaku = copy.deepcopy(self.yakus)
+                        tempScore = self.score
+            elif self.score > tempScore:
+                temp_yaku = copy.deepcopy(self.yakus)
+                tempFan = self.fan
+                tempFu = self.fu
+                tempScore = self.score
+            # 清空查下一个役种可能性
+            self.yakus.clear()
+            self.yakumans.clear()
+        self.fu = tempFu
+        self.fan = tempFan
+        self.yakus = temp_yaku
+        self.score = tempScore
 
     # https://majyan-item.com/tensu-keisan-kaisetu/
     def fuCalculation(self, ronType):
@@ -87,23 +147,23 @@ class MahjongGroup:
             for mianzi in self.mianzis:
                 if mianzi.mianziType == KEZI:
                     if mianzi.fulou or (mianzi.startTile == self.ronTile and not self.isZimo):
-                        if 2 <= mianzi.startTile % 10 <= 8 and not mianzi.startTile / 10 == 4:
+                        if 2 <= mianzi.startTile % 10 <= 8 and not mianzi.startTile // 10 == 4:
                             jumpFu += 2
                         else:
                             jumpFu += 4
                     else:
-                        if 2 <= mianzi.startTile % 10 <= 8 and not mianzi.startTile / 10 == 4:
+                        if 2 <= mianzi.startTile % 10 <= 8 and not mianzi.startTile // 10 == 4:
                             jumpFu += 4
                         else:
                             jumpFu += 8
                 elif mianzi.mianziType == GANG:
                     if mianzi.fulou:
-                        if 2 <= mianzi.startTile % 10 <= 8 and not mianzi.startTile / 10 == 4:
+                        if 2 <= mianzi.startTile % 10 <= 8 and not mianzi.startTile // 10 == 4:
                             jumpFu += 8
                         else:
                             jumpFu += 16
                     else:
-                        if 2 <= mianzi.startTile % 10 <= 8 and not mianzi.startTile / 10 == 4:
+                        if 2 <= mianzi.startTile % 10 <= 8 and not mianzi.startTile // 10 == 4:
                             jumpFu += 16
                         else:
                             jumpFu += 32
@@ -182,51 +242,51 @@ class MahjongGroup:
         return finalRonType
 
     def checkYakus(self, ronType):
-        self.checkRiichi()
-        self.checkDoubleRiichi()
-        self.checkIppatsu()
-        self.checkMenzenTsumo()
-        self.checkPinfu(ronType)
-        self.checkTanyao()
-        self.checkYakuHai()
-        self.checkLastCardAgari()
-        self.checkQiangGang()
-        self.checkLingShang()
-        self.checkChiiDuiZi()
-        self.checkItTsu()
-        self.checkSanShoukuTouChun()
-        self.checkChanTa()
-        self.checkSanShoukuTonKou()
-        self.checkSanAnKou(ronType)
-        self.checkDuiDui()
-        self.checkShouSanGen()
-        self.checkHonnRoTou()
-        self.checkSanGangZi()
-        self.checkHonItTsu()
-        self.checkJunChan()
-        self.checkRyanBeiKou()
-        self.checkChinnItTsu()
+        self.checkYakuman()
+        if len(self.yakumans) == 0:
+            self.checkRiichi()
+            self.checkIppatsu()
+            self.checkMenzenTsumo()
+            self.checkPinfu(ronType)
+            self.checkTanyao()
+            self.checkIppbeiko()
+            self.checkYakuHai()
+            self.checkLastCardAgari()
+            self.checkQiangGang()
+            self.checkLingShang()
+            self.checkChiiDuiZi()
+            self.checkItTsu()
+            self.checkSanShoukuTouChun()
+            self.checkChanTa()
+            self.checkSanShoukuTonKou()
+            self.checkSanAnKou(ronType)
+            self.checkDuiDui()
+            self.checkShouSanGen()
+            self.checkHonnRoTou()
+            self.checkSanGangZi()
+            self.checkHonItTsu()
+            self.checkJunChan()
+            self.checkRyanBeiKou()
+            self.checkChinnItTsu()
+            self.checkDora()
+
+    def checkYakuman(self):
+        self.firstTurnAgari()
         self.checkKoukushi()
         self.checkSuuAnKou()
         self.checkChuuRen()
         self.checkSuShi()
         self.checkDaiSanGen()
+        self.checkRyuuIiSou()
+        self.checkTsuIiSou()
         self.checkChinnRouTou()
         self.checkSuGangZi()
-        self.checkTenHou()
-        self.checkChiiHou()
-        self.checkDora()
-        self.checkUra()
-        self.checkAka()
-        pass
 
     def checkRiichi(self):
         if self.isRiichi:
             self.yakus.append(Yaku(YAKU_LIST[0], 1))
-
-    def checkDoubleRiichi(self):
-        if self.isWReach:
-            self.yakus.append(Yaku(YAKU_LIST[11], 1))
+        elif self.isWReach:
+            self.yakus.append(Yaku(YAKU_LIST[11], 2))
 
     def checkIppatsu(self):
         if self.isYifa:
@@ -250,7 +310,7 @@ class MahjongGroup:
 
     def checkTanyao(self):
         for tile in self.tiles:
-            if not (2 <= tile % 10 <= 8):
+            if not (2 <= tile % 10 <= 8) or tile > 40:
                 return
         self.yakus.append(Yaku(YAKU_LIST[4], 1))
 
@@ -276,8 +336,8 @@ class MahjongGroup:
                 if mianzi.startTile == self.selfWind + 41:
                     self.yakus.append(Yaku(YAKU_LIST[6] + ' ' + YAKUHAI[1], 1))
                     # 役牌
-                    if 45 <= mianzi.startTile <= 47:
-                        self.yakus.append(Yaku(YAKU_LIST[6] + ' ' + YAKUHAI[mianzi.startTile % 10 - 3], 1))
+                if 45 <= mianzi.startTile <= 47:
+                    self.yakus.append(Yaku(YAKU_LIST[6] + ' ' + YAKUHAI[mianzi.startTile % 10 - 3], 1))
 
     def checkLastCardAgari(self):
         if self.isHaidi:
@@ -295,7 +355,7 @@ class MahjongGroup:
 
     def checkChiiDuiZi(self):
         if self.yakuType == SEVEN_PAIR:
-            self.yakus.append(Yaku(YAKU_LIST[12], 7))
+            self.yakus.append(Yaku(YAKU_LIST[12], 2))
 
     def checkItTsu(self):
         for i in range(len(self.mianzis)):
@@ -339,10 +399,10 @@ class MahjongGroup:
             for mianzi in self.mianzis:
                 if mianzi.mianziType == KEZI:
                     if 2 <= mianzi.startTile % 10 <= 8 and mianzi.startTile < 40:
-                        break
+                        return
                 else:
                     if mianzi.startTile != 1 and mianzi.startTile != 7:
-                        break
+                        return
             if self.isMenzen:
                 self.yakus.append(Yaku(YAKU_LIST[15], 2))
             else:
@@ -379,10 +439,11 @@ class MahjongGroup:
                         return
 
     def checkDuiDui(self):
-        for mianzi in self.mianzis:
-            if mianzi.mianziType == SHUNZI:
-                return
-        self.yakus.append(Yaku(YAKU_LIST[18], 2))
+        if len(self.mianzis) > 0:
+            for mianzi in self.mianzis:
+                if mianzi.mianziType == SHUNZI:
+                    return
+            self.yakus.append(Yaku(YAKU_LIST[18], 2))
 
     def checkShouSanGen(self):
         for i in range(len(self.mianzis)):
@@ -407,7 +468,7 @@ class MahjongGroup:
     def checkSanGangZi(self):
         for i in range(len(self.mianzis)):
             for j in range(i + 1, len(self.mianzis)):
-                for k in range(i + 2, len(self.mianzi)):
+                for k in range(i + 2, len(self.mianzis)):
                     fMianzi = self.mianzis[i]
                     sMianzi = self.mianzis[j]
                     tMianzi = self.mianzis[k]
@@ -429,7 +490,7 @@ class MahjongGroup:
                 self.yakus.append(Yaku(YAKU_LIST[22], 3))
             else:
                 self.yakus.append(Yaku(YAKU_LIST[22], 2))
-            self.ittsuIndex = len(self.yakus) - 1
+            self.iishoukuIndex = len(self.yakus) - 1
 
     def checkJunChan(self):
         if (self.duizi % 10 == 1 or self.duizi % 10 == 9) and self.duizi < 40:
@@ -448,7 +509,7 @@ class MahjongGroup:
                 self.yakus.append(Yaku(YAKU_LIST[23], 2))
 
     def checkRyanBeiKou(self):
-        if len(self.mianzis) > 0:
+        if self.ippbeikoIndex >= 0 and len(self.mianzis) > 0:
             firstMianzi = self.mianzis[0]
             secondMianzi = self.mianzis[1]
             thirdMianzi = self.mianzis[2]
@@ -456,31 +517,36 @@ class MahjongGroup:
             if firstMianzi.mianziType == secondMianzi.mianziType == thirdMianzi.mianziType == fourthMianzi.mianziType == SHUNZI:
                 if (firstMianzi.startTile == secondMianzi.startTile) and (
                         thirdMianzi.startTile == fourthMianzi.startTile):
-                    if self.ippbeikoIndex >= 0:
-                        del self.yakus[self.ippbeikoInde]
+                    del self.yakus[self.ippbeikoIndex]
+                    if self.iishoukuIndex > self.ippbeikoIndex:
+                        self.iishoukuIndex -= 1
                     self.yakus.append(Yaku(YAKU_LIST[24], 3))
 
-    def checkChinnItTsu(self):
+    def checkIiShoukuKei(self):
         suit = -1
         for tile in self.tiles:
             if tile < 40:
                 if suit == -1:
-                    color = tile // 10
-                elif color != tile // 10:
-                    return
-        if suit > 0:
+                    suit = tile // 10
+                elif suit != tile // 10:
+                    return False
+            elif tile > 40:
+                return False
+        return True
+
+    def checkChinnItTsu(self):
+        if self.checkIiShoukuKei():
             if self.isMenzen:
                 self.yakus.append(Yaku(YAKU_LIST[25], 6))
             else:
                 self.yakus.append(Yaku(YAKU_LIST[25], 5))
-            del self.yakus[self.ittsuIndex]
-            self.isIttShouku = True
+            del self.yakus[self.iishoukuIndex]
 
     def checkKoukushi(self):
         if self.yakuType == KOKUSHI:
             if self.ruleSet['baiYakuman']:
                 # 查13面
-                copyTile = copy.deepcopy(self.inner[0:-1])
+                copyTile = copy.deepcopy(self.tiles[0:-1])
                 copyTile.sort()
                 kyokushiTiles = [11, 19, 21, 29, 31, 39, 41, 42, 43, 44, 45, 46, 47]
                 if copyTile == kyokushiTiles:
@@ -495,39 +561,141 @@ class MahjongGroup:
             thirdMianzi = self.mianzis[2]
             fourthMianzi = self.mianzis[3]
             if self.ruleSet['baiYakuman']:
-                if firstMianzi.mianziType >= KEZI and secondMianzi.mianziType >= KEZI and thirdMianzi >= KEZI \
-                        and fourthMianzi >= KEZI and self.isMenzen and self.ronTile == self.duizi:
+                if firstMianzi.mianziType >= KEZI and secondMianzi.mianziType >= KEZI and thirdMianzi.mianziType >= KEZI \
+                        and fourthMianzi.mianziType >= KEZI and self.isMenzen and self.ronTile == self.duizi:
                     self.yakumans.append(Yaku(YAKU_LIST[39], '**'))
             else:
-                if firstMianzi.mianziType >= KEZI and secondMianzi.mianziType >= KEZI and thirdMianzi >= KEZI \
-                        and fourthMianzi >= KEZI and self.isMenzen:
+                if firstMianzi.mianziType >= KEZI and secondMianzi.mianziType >= KEZI and thirdMianzi.mianziType >= KEZI \
+                        and fourthMianzi.mianziType >= KEZI and self.isMenzen:
                     self.yakumans.append(Yaku(YAKU_LIST[28], '*'))
 
     def checkChuuRen(self):
         chuuren = [1, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 9]
-        if len(self.mianzis) > 0 and self.isIttShouku and self.isMenzen:
+        if len(self.mianzis) > 0 and self.checkIiShoukuKei() and self.isMenzen:
             if self.ruleSet['baiYakuman']:
-                copyTile = copy.deepcopy(self.inner[0:-1])
+                copyTile = copy.deepcopy(self.tiles[0:-1])
                 copyTile.sort()
                 originalInner = []
                 [originalInner.append(tile % 10) for tile in copyTile]
                 if originalInner == chuuren:
                     self.yakumans.append(Yaku(YAKU_LIST[40], '**'))
             else:
-                copyTile = copy.deepcopy(self.inner)
+                copyTile = copy.deepcopy(self.tiles)
                 copyTile.sort()
                 color = copyTile[0] // 10
-                [copyTile.remove(color * 10 + tile) for tile in chuuren]
+                [copyTile.remove(color * 10 + tile) for tile in chuuren if color * 10 + tile in copyTile]
                 if len(copyTile) == 1:
                     if copyTile[0] == self.ronTile:
                         self.yakumans.append(Yaku(YAKU_LIST[33], '*'))
 
     def checkSuShi(self):
-        pass
+        if len(self.mianzis) > 0:
+            firstMianzi = self.mianzis[0]
+            secondMianzi = self.mianzis[1]
+            thirdMianzi = self.mianzis[2]
+            fourthMianzi = self.mianzis[3]
+            startTileLst = [firstMianzi.startTile, secondMianzi.startTile, thirdMianzi.startTile,
+                            fourthMianzi.startTile]
+            startTileLst.sort()
+            windLst = [41, 42, 43, 44]
+            [windLst.remove(tile) for tile in startTileLst if tile in windLst]
+            if len(windLst) == 0:
+                if self.ruleSet['baiYakuman']:
+                    self.yakumans.append(Yaku(YAKU_LIST[38], '**'))
+                else:
+                    self.yakumans.append(Yaku(YAKU_LIST[38], '*'))
+            elif len(windLst) == 1:
+                if 41 <= self.duizi <= 44 and windLst[0] == self.duizi:
+                    self.yakumans.append(Yaku(YAKU_LIST[29], '*'))
+
+    def checkDaiSanGen(self):
+        if len(self.mianzis) > 0:
+            firstMianzi = self.mianzis[0]
+            secondMianzi = self.mianzis[1]
+            thirdMianzi = self.mianzis[2]
+            fourthMianzi = self.mianzis[3]
+            startTileLst = [firstMianzi.startTile, secondMianzi.startTile, thirdMianzi.startTile,
+                            fourthMianzi.startTile]
+            startTileLst.sort()
+            sanGenMianzi = [45, 46, 47]
+            if all(tile in startTileLst for tile in sanGenMianzi):
+                self.yakumans.append(Yaku(YAKU_LIST[27], '*'))
+
+    def checkRyuuIiSou(self):
+        for tile in self.tiles:
+            if tile == HATSU and self.ruleSet['RyuiisouWithHatsu']:
+                return
+            else:
+                ryuuIISouTile = [22, 23, 24, 26, 28, 46]
+                if tile not in ryuuIISouTile:
+                    return
+        self.yakumans.append(Yaku(YAKU_LIST[31], '*'))
+
+    def checkTsuIiSou(self):
+        for tile in self.tiles:
+            if tile < 40:
+                return
+        self.yakumans.append(Yaku(YAKU_LIST[30], '*'))
+
+    def checkChinnRouTou(self):
+        if len(self.mianzis) > 0:
+            for tile in self.tiles:
+                if tile > 40 or (tile % 10 != 1 or tile % 10 != 9):
+                    return
+            self.yakumans.append(Yaku(YAKU_LIST[32], '*'))
+
+    def checkSuGangZi(self):
+        if len(self.mianzis) > 0:
+            for mianzi in self.mianzis:
+                if mianzi.mianziType != GANG:
+                    return
+            self.yakumans.append(Yaku(YAKU_LIST[34], '*'))
+
+    def firstTurnAgari(self):
+        if self.isTianhe:
+            self.yakumans.append(Yaku(YAKU_LIST[35], '*'))
+        elif self.isDihe:
+            self.yakumans.append(Yaku(YAKU_LIST[36], '*'))
+
+    def checkDora(self):
+        numDora = 0
+        numUra = 0
+        for tile in self.tiles:
+            if tile in self.dora:
+                numDora += 1
+            if tile in self.uraDora:
+                numUra += 1
+
+        numAka = len(self.akaSet)
+
+        if numDora > 0:
+            self.yakus.append(Yaku(YAKU_LIST[41], numDora))
+
+        if numUra > 0:
+            self.yakus.append(Yaku(YAKU_LIST[42], numUra))
+
+        if numAka > 0:
+            self.yakus.append(Yaku(YAKU_LIST[43], numAka))
+
+    def scoreDisplay(self):
+        if self.isZimo:
+            if self.selfWind == EAST:
+                basePay = int(math.ceil(self.score / 3 / 100) * 100)
+                return str(basePay) + '点∀'
+            else:
+                basePay = int(math.ceil(self.score / 2 / 100) * 100)
+                highPay = basePay
+                basePay = int(math.ceil(basePay / 2 / 100) * 100)
+                lowPay = basePay
+                return str(lowPay) + '-' + str(highPay)
+        else:
+            return str(self.score)
 
     def __str__(self):
         return "Yaku Type: " + str(self.yakuType) + " with Mianzis: " + str(
             [str(mianzi) for mianzi in self.mianzis]) + " Duizi " + str(self.duizi) + "\n" + str(
-            self.fu) + " fu " + str(self.fan) + " fan" + "\nYaku List:" + str(
-            self.yakus) + " is Menzen: " + str(self.isMenzen) + " and " + ("Zimo " if self.isZimo else "Ron") + str(
-            self.tiles)
+            self.fu) + " fu " + str(self.fan) + " fan with score " + self.scoreDisplay() + "\nYaku List:" + \
+               str([str(yakuman) for yakuman in self.yakumans] if len(self.yakumans) > 0
+                   else [str(yaku) for yaku in self.yakus]) + " is Menzen: " + str(
+            self.isMenzen) + " and " + ("Zimo " if self.isZimo else "Ron") + str(
+            self.tiles) + " aka list: " + str(self.akaSet)
