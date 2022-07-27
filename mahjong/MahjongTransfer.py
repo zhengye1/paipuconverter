@@ -242,7 +242,7 @@ class MahjongTransfer:
                 del tempGroupResult[0]
 
         # fulou part
-        # outerTiles should have the format [cpka, t, t, t, (t)]
+        # outerTiles should have the format [cpkam, t, t, t, (t)]
         fulouMianzi = []
         for lst in self.outerTiles:
             if len(lst) != 0:
@@ -299,12 +299,15 @@ class MahjongTransfer:
         return finalSetGroup
 
 
-transfer = MahjongTransfer([26, 26, 26, 27, 28, 31, 32, 33, 34, 35, 37, 38, 39, 36], [], 36)
-transfer.ronFormat = 'Z'
+transfer = MahjongTransfer([11, 11, 12, 12, 14, 14, 27, 27, 24, 24, 20, 25, 13, 13], [], 13)
+transfer.ronFormat = 'R'
 group = transfer.toMahjongGroup()
 for g in group:
-    g.setSpecial(EAST, SOUTH, isRiichi=True)
+    g.setSpecial(EAST, SOUTH)
     g.setDora([44], [])
     g.finalCheck()
     print(g)
     print("=================")
+
+group.sort(key=lambda x: (x.score, x.fan, x.fu), reverse=True)
+print(group[0])

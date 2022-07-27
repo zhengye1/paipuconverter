@@ -92,6 +92,22 @@ class GangZimoWrapper:
         return ignoreNoneEncode(self.__dict__)
 
 
+class KaiGangWrapper:
+    def __init__(self, kaigang):
+        self.kaigang = kaigang
+
+    def encode(self):
+        return ignoreNoneEncode(self.__dict__)
+
+
+class KaiGang:
+    def __init__(self, baopai):
+        self.baopai = baopai
+
+    def encode(self):
+        return ignoreNoneEncode(self.__dict__)
+
+
 class Hule:
     def __init__(self, l=None, shoupai=None, baojia=None, fubaopai=None, fu=None, fanshu=None, damanguan=None,
                  defen=None, hupai=None, fenpei=None):
