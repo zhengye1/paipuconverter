@@ -60,9 +60,13 @@ def listHandToKobaStr(hand):
     for num in hand:
         if type(num) == str and num.isnumeric():
             num = int(num)
-
-        shu = num % 10
-        pai = num // 10
+        # 天凤用51代表红五，52代表红⑤，53代表红5
+        if num > 50:
+            shu = 0
+            pai = num % 10
+        else:
+            shu = num % 10
+            pai = num // 10
         if pai == 1:
             kobaDict['m'].append(str(shu))
         if pai == 2:
@@ -94,8 +98,13 @@ def tenhouNumToPai(tenhouNum, pai=None):
         wordToConvert = pai
         tsumokiri = '_'
 
-    shu = int(wordToConvert) % 10
-    pai = int(wordToConvert) // 10
+    intFormatWord = int(wordToConvert)
+    if 51 <= intFormatWord <= 53:
+        pai = intFormatWord % 10
+        shu = 0
+    else:
+        shu = int(wordToConvert) % 10
+        pai = int(wordToConvert) // 10
     mian = ''
     if pai == 1:
         mian = 'm'
@@ -126,11 +135,11 @@ def fulou(tenhouPai):
         fulouDict['showHand'] = [int(tenhouPai[pIndex + 1:pIndex + 3])] * 2
         kobaFulou = listHandToKobaStr([tenhouPai[pIndex + 1:pIndex + 3]] * 3)
         if pIndex == 0:
-            kobaFulou = kobaFulou[0:2] + SHANGJIA_NOTATION + kobaFulou[2:]
+            kobaFulou = kobaFulou + SHANGJIA_NOTATION
         elif pIndex == 2:
-            kobaFulou = kobaFulou[0:3] + DUIJIA_NOTION + kobaFulou[3:]
+            kobaFulou = kobaFulou + DUIJIA_NOTION
         elif pIndex == 4:
-            kobaFulou = kobaFulou[0:4] + XIAJIA_NOTATION + kobaFulou[4:]
+            kobaFulou = kobaFulou + XIAJIA_NOTATION
         fulouDict['kobaStr'] = kobaFulou
         fulouDict['fulouType'] = 'p'
         fulouDict['fulouPai'] = int(tenhouPai[pIndex + 1:pIndex + 3])
@@ -140,13 +149,13 @@ def fulou(tenhouPai):
     if 'k' in tenhouPai:
         kIndex = tenhouPai.index('k')
         fulouDict['showHand'] = [int(tenhouPai[kIndex + 1:kIndex + 3])] * 3
-        kobaFulou = listHandToKobaStr([tenhouPai[kIndex + 1:kIndex + 3]] * 4)
+        kobaFulou = listHandToKobaStr([tenhouPai[kIndex + 1:kIndex + 3]] * 3)
         if kIndex == 0:
-            kobaFulou = kobaFulou[0:2] + SHANGJIA_NOTATION + kobaFulou[2:]
+            kobaFulou = kobaFulou + SHANGJIA_NOTATION + kobaFulou[1]
         elif kIndex == 2:
-            kobaFulou = kobaFulou[0:3] + DUIJIA_NOTION + kobaFulou[3:]
+            kobaFulou = kobaFulou + DUIJIA_NOTION + kobaFulou[1]
         elif kIndex == 4:
-            kobaFulou = kobaFulou[0:4] + XIAJIA_NOTATION + kobaFulou[4:]
+            kobaFulou = kobaFulou + XIAJIA_NOTATION + kobaFulou[1]
         fulouDict['kobaStr'] = kobaFulou
         fulouDict['fulouType'] = 'k'
         fulouDict['fulouPai'] = int(tenhouPai[kIndex + 1:kIndex + 3])
@@ -157,11 +166,11 @@ def fulou(tenhouPai):
         fulouDict['showHand'] = [int(tenhouPai[kIndex + 1:kIndex + 3])] * 3
         kobaFulou = listHandToKobaStr([tenhouPai[kIndex + 1:kIndex + 3]] * 4)
         if kIndex == 0:
-            kobaFulou = kobaFulou[0:2] + SHANGJIA_NOTATION + kobaFulou[2:]
+            kobaFulou = kobaFulou + SHANGJIA_NOTATION
         elif kIndex == 2:
-            kobaFulou = kobaFulou[0:3] + DUIJIA_NOTION + kobaFulou[3:]
+            kobaFulou = kobaFulou + DUIJIA_NOTION
         elif kIndex == 4:
-            kobaFulou = kobaFulou[0:4] + XIAJIA_NOTATION + kobaFulou[4:]
+            kobaFulou = kobaFulou + XIAJIA_NOTATION
         fulouDict['kobaStr'] = kobaFulou
         fulouDict['fulouType'] = 'm'
         fulouDict['fulouPai'] = int(tenhouPai[kIndex + 1:kIndex + 3])
@@ -177,43 +186,26 @@ def fulou(tenhouPai):
         return fulouDict
 
 
-def terminateCondition(mopaiIndex, mopaiLength, dapaiIndex, dapaiLength):
-    terminateDict = {'terminate': False, 'terminateBy': ""}
-    print(f'T:{[mopaiIndex[0], mopaiLength[0], dapaiIndex[0], dapaiLength[0]]}')
-    print(f'N:{[mopaiIndex[1], mopaiLength[1], dapaiIndex[1], dapaiLength[1]]}')
-    print(f'X:{[mopaiIndex[2], mopaiLength[2], dapaiIndex[2], dapaiLength[2]]}')
-    print(f'B:{[mopaiIndex[3], mopaiLength[3], dapaiIndex[3], dapaiLength[3]]}')
-    eastRCheck = (
-            all(v == mopaiLength[0] for v in [mopaiIndex[0], mopaiLength[0]]) and
-            all(v == dapaiLength[0] for v in [dapaiIndex[0], dapaiLength[0]]))
-    southRCheck = (all(v == mopaiLength[1] for v in [mopaiIndex[1], mopaiLength[1]]) and
-                   all(v == dapaiLength[1] for v in [dapaiIndex[1], dapaiLength[1]]))
-    westRCheck = (all(v == mopaiLength[2] for v in [mopaiIndex[2], mopaiLength[2]]) and
-                  all(v == dapaiLength[2] for v in [dapaiIndex[2], dapaiLength[2]]))
-    northRCheck = (all(v == mopaiLength[3] for v in [mopaiIndex[3], mopaiLength[3]]) and
-                   all(v == dapaiLength[3] for v in [dapaiIndex[3], dapaiLength[3]]))
+def indexCheck(mopaiAction, dapaiAction, mopaiLength, dapaiLength, player):
+    return len(mopaiAction[player]) == len(dapaiAction[player]) == 0 and mopaiLength[player] - dapaiLength[player] == 1
 
-    terminateByRonOrRyukyoku = eastRCheck and southRCheck and westRCheck and northRCheck
+
+def terminateCondition(mopaiAction, mopaiLength, dapaiAction, dapaiLength):
+    terminateDict = {'terminate': False, 'terminateBy': ""}
+    terminateByRonOrRyukyoku = \
+        len(mopaiAction[EAST]) == len(mopaiAction[SOUTH]) == len(mopaiAction[WEST]) == len(mopaiAction[NORTH]) \
+        == len(dapaiAction[EAST]) == len(dapaiAction[SOUTH]) == len(dapaiAction[WEST]) == len(dapaiAction[NORTH]) == 0
 
     if terminateByRonOrRyukyoku:
         terminateDict['terminate'] = True
         terminateDict['terminateBy'] = 'R'  # R for ron or ryukyoku
         return terminateDict
 
-    # for zimo, it will guarantee have one player the index for mopai is 1 more then the dapai
-    eastZimoCheck = (
-            all(v == mopaiLength[0] for v in [mopaiIndex[0], mopaiLength[0]]) and
-            all(v == dapaiLength[0] for v in [dapaiIndex[0], dapaiLength[0]]) and
-            mopaiIndex[0] - dapaiIndex[0] == 1)
-    southZimoCheck = (all(v == mopaiLength[1] for v in [mopaiIndex[1], mopaiLength[1]]) and
-                      all(v == dapaiLength[1] for v in [dapaiIndex[1], dapaiLength[1]]) and
-                      mopaiIndex[1] - dapaiIndex[1] == 1)
-    westZimoCheck = (all(v == mopaiLength[2] for v in [mopaiIndex[2], mopaiLength[2]]) and
-                     all(v == dapaiLength[2] for v in [dapaiIndex[2], dapaiLength[2]]) and
-                     mopaiIndex[2] - dapaiIndex[2] == 1)
-    northZimoCheck = (all(v == mopaiLength[3] for v in [mopaiIndex[3], mopaiLength[3]]) and
-                      all(v == dapaiLength[3] for v in [dapaiIndex[3], dapaiLength[3]]) and
-                      mopaiIndex[3] - dapaiIndex[3] == 1)
+    eastZimoCheck = indexCheck(mopaiAction, dapaiAction, mopaiLength, dapaiLength, EAST)
+    southZimoCheck = indexCheck(mopaiAction, dapaiAction, mopaiLength, dapaiLength, SOUTH)
+    westZimoCheck = indexCheck(mopaiAction, dapaiAction, mopaiLength, dapaiLength, WEST)
+    northZimoCheck = indexCheck(mopaiAction, dapaiAction, mopaiLength, dapaiLength, NORTH)
+
     terminateByZimo = eastZimoCheck or southZimoCheck or westZimoCheck or northZimoCheck
     if terminateByZimo:
         terminateDict['terminate'] = True
@@ -311,22 +303,19 @@ def parseKyoku(kyokuReport):
     westDaPai = kyokuReport[0][westIndex + 2]
     northMoPai = kyokuReport[0][northIndex + 1]
     northDaPai = kyokuReport[0][northIndex + 2]
-    mopaiAction = [eastMoPai, southMoPai, westMoPai, northMoPai]
-    dapaiAction = [eastDaPai, southDaPai, westDaPai, northDaPai]
+    mopaiAction = [[mp for mp in eastMoPai], [mp for mp in southMoPai], [mp for mp in westMoPai],
+                   [mp for mp in northMoPai]]
+    dapaiAction = [[dp for dp in eastDaPai], [dp for dp in southDaPai], [dp for dp in westDaPai],
+                   [dp for dp in northDaPai]]
 
     # keep track the fulou
     fulouHand = [[], [], [], []]
     kobaFulouHand = [[], [], [], []]
 
-    mopaiIndex = [0, 0, 0, 0]
     mopaiLength = [len(eastMoPai), len(southMoPai), len(westMoPai), len(northMoPai)]
-    dapaiIndex = [0, 0, 0, 0]
     dapaiLength = [len(eastDaPai), len(southDaPai), len(westDaPai), len(northDaPai)]
 
-    print(f'initial: {mopaiLength} | {dapaiLength}')
-    print(f'initial list : {mopaiAction} |{dapaiAction}')
     currentPlayerIndex = EAST
-    gameStart = False
     mopai = ''
     dapai = ''
     gameStep = [qiPaiWrapper]
@@ -346,20 +335,17 @@ def parseKyoku(kyokuReport):
 
     while True:
         if action == 'M':
-            print(f'current player {currentPlayerIndex} after dapai {tenhouShoupai[currentPlayerIndex]}')
-            print(f'mopaiIndex {mopaiIndex[currentPlayerIndex]}')
-            print(f'mopaiAction {mopaiAction[currentPlayerIndex]}')
-            mopai = mopaiAction[currentPlayerIndex][mopaiIndex[currentPlayerIndex]]
-            print(f"current player {currentPlayerIndex} mopai: {mopai}")
-            mopaiIndex[currentPlayerIndex] += 1
-            terminateDict = terminateCondition(mopaiIndex, mopaiLength, dapaiIndex, dapaiLength)
+            mopai = mopaiAction[currentPlayerIndex].pop(0)
+            print(
+                f'current player: {currentPlayerIndex} , action: mopai {mopai} , tehai {tenhouShoupai[currentPlayerIndex]}')
+            terminateDict = terminateCondition(mopaiAction, mopaiLength, dapaiAction, dapaiLength)
             if terminateDict['terminate']:
                 if terminateDict['terminateBy'] == 'Z':
                     agariPai = mopai
-                    if currentPlayerIndex == EAST and mopaiIndex[currentPlayerIndex] == 1:
+                    if currentPlayerIndex == EAST and len(mopaiAction[EAST] == 0):
                         isTianhe = True
                         break
-                    elif currentPlayerIndex != EAST and mopaiIndex[currentPlayerIndex] == 1 and not chiPengKang:
+                    elif currentPlayerIndex != EAST and len(mopaiAction[currentPlayerIndex]) == 0 and not chiPengKang:
                         isDihe = True
                         break
                     else:
@@ -368,10 +354,11 @@ def parseKyoku(kyokuReport):
                             isLingShang = True
                             if previous == 'D':  # 从暗杠来的
                                 baopaiIndex += 1
-                                kaigang = KaiGangWrapper(KaiGang(baopaiLst[baopaiIndex]))
+                                kaigang = KaiGangWrapper(KaiGang(tenhouNumToPai(baopaiLst[baopaiIndex])))
                                 gameStep.append(kaigang)
-                                gangzimo = GangZimoWrapper(PaiAction(currentPlayerIndex, p=mopai))
+                                gangzimo = GangZimoWrapper(PaiAction(currentPlayerIndex, p=tenhouNumToPai(mopai)))
                                 gameStep.append(gangzimo)
+                                tenhouShoupai[currentPlayerIndex].append(mopai)
                                 remainTile -= 1
                         if remainTile == 0 and not isLingShang:
                             isHaidi = True
@@ -380,33 +367,35 @@ def parseKyoku(kyokuReport):
                 if kangExists and previous == 'D':
                     kangExists = False
                     baopaiIndex += 1
-                    kaigang = KaiGangWrapper(KaiGang(baopaiLst[baopaiIndex]))
+                    kaigang = KaiGangWrapper(KaiGang(tenhouNumToPai(baopaiLst[baopaiIndex])))
                     gameStep.append(kaigang)
-                    gangzimo = GangZimoWrapper(PaiAction(currentPlayerIndex, p=mopai))
+                    gangzimo = GangZimoWrapper(PaiAction(currentPlayerIndex, p=tenhouNumToPai(mopai)))
                     gameStep.append(gangzimo)
+                    tenhouShoupai[currentPlayerIndex].append(mopai)
                     remainTile -= 1
                     action = 'D'
                     previous = 'M'
 
                 # 大明杠
                 elif type(mopai) == str and ('m' in mopai or 'p' in mopai or 'c' in mopai):
+                    chiPengKang = True
                     fulouDict = fulou(mopai)
                     lst = []
                     for tile in fulouDict['showHand']:
-                        tenhouShoupai[currentPlayerIndex].remove(int(tile))
+                        if tile % 10 == 0:  # 遇到红五了
+                            tenhouShoupai[currentPlayerIndex].remove(50 + tile // 10)
+                        else:
+                            tenhouShoupai[currentPlayerIndex].remove(tile)
                         lst.append(int(tile))
                     lst.insert(0, fulouDict['fulouType'])
                     lst.append(fulouDict['fulouPai'])
                     fulouHand[currentPlayerIndex].append(lst)
                     kobaFulouHand[currentPlayerIndex].append(fulouDict['kobaStr'])
+                    print(f'kobaStr: {fulouDict}')
                     kobaFulou = FulouWrapper(PaiAction(currentPlayerIndex, m=fulouDict['kobaStr']))
                     gameStep.append(kobaFulou)
                     if 'm' in mopai:
-                        # 杠dora即开
-                        baopaiIndex += 1
-                        kaigang = KaiGangWrapper(KaiGang(baopaiLst[baopaiIndex]))
-                        gameStep.append(kaigang)
-                        dapaiIndex[currentPlayerIndex] += 1  # 因为是0 所以要挪一过去
+                        dapaiAction[currentPlayerIndex].pop(0)  # 因为是0 所以要挪一过去
                         kangExists = True
                     else:
                         action = 'D'
@@ -420,16 +409,19 @@ def parseKyoku(kyokuReport):
                     action = 'D'
                     previous = 'M'
                     remainTile -= 1
+            print(f'current player: {currentPlayerIndex} tehai after mopai: {tenhouShoupai[currentPlayerIndex]}')
         else:
-            print(f'current player {currentPlayerIndex} after mopai {tenhouShoupai[currentPlayerIndex]}')
-            dapai = dapaiAction[currentPlayerIndex][dapaiIndex[currentPlayerIndex]]
-            dapaiIndex[currentPlayerIndex] += 1
-            print(f"current player {currentPlayerIndex} dapai: {dapai}")
+            dapai = dapaiAction[currentPlayerIndex].pop(0)
+            print(f'current player: {currentPlayerIndex} , action: dapai {dapai}')
             if type(dapai) == str and 'a' in dapai:
+                chiPengKang = True
                 fulouDict = fulou(dapai)
                 lst = []
                 for tile in fulouDict['showHand']:
-                    tenhouShoupai[currentPlayerIndex].remove(tile)
+                    if tile % 10 == 0:  # 遇到红五了
+                        tenhouShoupai[currentPlayerIndex].remove(50 + tile // 10)
+                    else:
+                        tenhouShoupai[currentPlayerIndex].remove(tile)
                     lst.append(tile)
                 lst.insert(0, fulouDict['fulouType'])
                 lst.append(fulouDict['fulouPai'])
@@ -440,8 +432,10 @@ def parseKyoku(kyokuReport):
                 kangExists = True
                 action = 'M'
                 previous = 'D'
+                print(f'current player: {currentPlayerIndex} tehai after dapai: {tenhouShoupai[currentPlayerIndex]}')
 
             elif type(dapai) == str and 'k' in dapai:
+                chiPengKang = True
                 fulouDict = fulou(dapai)
                 pLst = ['p'] + fulouDict['showHand']  # 加杠必定纯在已经被碰掉的情况
                 index = fulouHand[currentPlayerIndex].index(pLst)
@@ -450,14 +444,14 @@ def parseKyoku(kyokuReport):
                 gang = GangWrapper(PaiAction(currentPlayerIndex, m=fulouDict['kobaStr']))
                 gameStep.append(gang)
                 kangExists = True
-                dapaiIndex[currentPlayerIndex] += 1
                 action = 'M'
                 previous = 'D'
+                print(f'current player: {currentPlayerIndex} tehai after dapai: {tenhouShoupai[currentPlayerIndex]}')
 
             else:
                 if dapai == 'r60' or dapai == 60:
                     kobaPai = tenhouNumToPai(dapai, mopai)
-                    dapai = mopai # 因为是摸切
+                    dapai = mopai  # 因为是摸切
                     tenhouShoupai[currentPlayerIndex].remove(mopai)
                 elif type(dapai) == str and 'r' in dapai:
                     kobaPai = tenhouNumToPai(dapai)
@@ -467,11 +461,10 @@ def parseKyoku(kyokuReport):
                     tenhouShoupai[currentPlayerIndex].remove(dapai)
                 kobaDapai = DaPaiWrapper(PaiAction(currentPlayerIndex, p=kobaPai))
                 gameStep.append(kobaDapai)
-
+                print(f'current player: {currentPlayerIndex} tehai after dapai: {tenhouShoupai[currentPlayerIndex]}')
                 action = 'M'
                 previous = 'D'
-                terminateDict = terminateCondition(mopaiIndex, mopaiLength, dapaiIndex, dapaiLength)
-                print(f'terminate? {terminateDict}')
+                terminateDict = terminateCondition(mopaiAction, mopaiLength, dapaiAction, dapaiLength)
                 # 打出去的要是结束如果没牌暂且算上是河底
                 if terminateDict['terminate'] and terminateDict['terminateBy'] == 'R':
                     agariPai = mopai if dapai == 'r60' or dapai == 60 else dapai
@@ -479,16 +472,15 @@ def parseKyoku(kyokuReport):
                         isHedi = True
                     break
                 else:
+                    shangjia = (currentPlayerIndex + 3) % 4
                     duijia = (currentPlayerIndex + 2) % 4
                     xiajia = (currentPlayerIndex + 1) % 4
-                    shangjia = (currentPlayerIndex + 3) % 4
-                    if mopaiIndex[duijia] < mopaiLength[duijia] and bool(
-                            re.search('[pm]', str(mopaiAction[duijia][mopaiIndex[duijia]]))) and \
-                            str(dapai) in mopaiAction[duijia][mopaiIndex[duijia]]:
+                    if len(mopaiAction[duijia]) != 0 and bool(
+                            re.search('[pm]', str(mopaiAction[duijia][0]))) and str(dapai) in mopaiAction[duijia][0]:
                         currentPlayerIndex = duijia
-                    elif mopaiIndex[shangjia] < mopaiLength[shangjia] and bool(
-                            re.search('[pm]', str(mopaiAction[shangjia][mopaiIndex[shangjia]]))) and \
-                            str(dapai) in mopaiAction[shangjia][mopaiIndex[shangjia]]:
+                    elif len(mopaiAction[shangjia]) != 0 and bool(
+                            re.search('[pm]', str(mopaiAction[shangjia][0]))) and str(dapai) in mopaiAction[shangjia][
+                        0]:
                         currentPlayerIndex = shangjia
                     else:
                         currentPlayerIndex = xiajia
