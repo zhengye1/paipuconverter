@@ -1,6 +1,6 @@
 def ignoreNoneEncode(classDict):
     outputDict = {}
-    for key, value in classDict.items:
+    for key, value in classDict.items():
         if value is not None:
             outputDict[key] = value
     return outputDict
