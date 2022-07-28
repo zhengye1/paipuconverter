@@ -15,6 +15,7 @@ class MahjongTransfer:
     """
 
     def __init__(self, innerTiles=[], outerTiles=[], ronTile=0, ronFormat='Z'):
+        print(f'innerTiles {sorted(innerTiles[0:-1]) + [innerTiles[-1]]}, outerTiles {outerTiles} ronTile {ronTile}')
         if len(innerTiles) + len(outerTiles) * 3 != 14 or (ronTile > 0 and ronTile not in innerTiles):
             raise MahjongNumberException
 
@@ -299,15 +300,16 @@ class MahjongTransfer:
         return finalSetGroup
 
 
-transfer = MahjongTransfer([11, 11, 12, 12, 14, 14, 27, 27, 24, 24, 20, 25, 13, 13], [], 13)
-transfer.ronFormat = 'R'
-group = transfer.toMahjongGroup()
-for g in group:
-    g.setSpecial(EAST, SOUTH)
-    g.setDora([44], [])
-    g.finalCheck()
-    print(g)
-    print("=================")
-
-group.sort(key=lambda x: (x.score, x.fan, x.fu), reverse=True)
-print(group[0])
+# transfer = MahjongTransfer([32, 32], [['k', 37, 37, 37, 37], ['k', 31, 31, 31, 31], ['m', 39, 39, 39, 39],
+#                                               ['a', 12, 12, 12, 12]], 32)
+# transfer.ronFormat = 'R'
+# group = transfer.toMahjongGroup()
+# for g in group:
+#     g.setSpecial(EAST, SOUTH)
+#     g.setDora([44], [])
+#     g.finalCheck()
+#     print(g)
+#     print("=================")
+#
+# group.sort(key=lambda x: (x.score, x.fan, x.fu), reverse=True)
+# print(group[0])

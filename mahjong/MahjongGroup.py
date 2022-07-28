@@ -657,9 +657,37 @@ class MahjongGroup:
         elif self.isDihe:
             self.yakumans.append(Yaku(YAKU_LIST[36], '*'))
 
+    def true_dora(self, doraLst):
+        for i, d in enumerate(doraLst):
+            if d < 40:
+                if d % 10 == 9:
+                    doraLst[i] = d // 10 + 1
+                elif d % 10 == 0:
+                    # 红5了
+                    doraLst[i] = d + 6
+                else:
+                    d += 1
+                    doraLst[i] = d
+            elif 41 <= d <= 44:
+                if d == 44:
+                    doraLst[i] = 41
+                else:
+                    d += 1
+                    doraLst[i] = d
+            elif 45 <= d <= 47:
+                if d == 47:
+                    doraLst[i] = 45
+                else:
+                    d += 1
+                    doraLst[i] = d
+
     def checkDora(self):
         numDora = 0
         numUra = 0
+        print(f'dora indicator {self.dora}, {self.uraDora}')
+        self.true_dora(self.dora)
+        self.true_dora(self.uraDora)
+        print(f'true dora {self.dora}, {self.uraDora}')
         for tile in self.tiles:
             if tile in self.dora:
                 numDora += 1
