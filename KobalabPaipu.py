@@ -43,7 +43,7 @@ class QiPaiWrapper:
 
 
 class PaiAction:
-    def __init__(self, l, p, m):
+    def __init__(self, l, p=None, m=None):
         self.l = l
         self.p = p
         self.m = m
