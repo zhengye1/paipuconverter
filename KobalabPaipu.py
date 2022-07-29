@@ -9,7 +9,7 @@ def ignoreNoneEncode(classDict):
 class KobalabPaipu:
     def __init__(self, title, player, qijia, log, defen, rank, point):
         self.title = title
-        self.playerr = player
+        self.player = player
         self.qijia = qijia
         self.log = log
         self.defen = defen
