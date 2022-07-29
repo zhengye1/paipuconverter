@@ -1,4 +1,3 @@
-import copy
 import json
 import re
 
@@ -10,7 +9,10 @@ from mahjong.util.MAJING_CONSTANT import EAST, SOUTH, WEST, NORTH
 SHANGJIA_NOTATION = '-'
 DUIJIA_NOTION = '='
 XIAJIA_NOTATION = '+'
+ruleSet = {}
 
+def setupRuleSet():
+    pass
 
 def listHandToKobaStr(hand):
     kobaDict = {'m': [], 'p': [], 's': [], 'z': []}
@@ -541,47 +543,38 @@ def parseKyoku(kyokuReport):
     print(f'kyokuReport: {kyokuReport}')
     return gameStep
 
+def parseHanchan(tenhouLine, ruleSet={}):
+    title = ''
+    player = ''
+    qijia = ''
+    log = []
+    defen = []
+    rank = []
+    point = [0, 0, 0, 0]
+    for i, kyokuStr in enumerate(tenhouLine):
+        kyoku = json.loads(kyokuStr)
+        # 半庄开始
+        if i == 0:
+            title = kyoku['title'][0]
+            player = kyoku['name']
+            qijia = EAST
+        log.append(parseKyoku(kyoku['log']))
+        if i == len(tenhouLine) - 1:
+            initialKyokuPoint = kyoku['log'][0][1]
+            tenshuChange = kyoku['log'][0][16][1]
+            print(f'all last initial:{initialKyokuPoint} and tenshu change: {tenshuChange}')
+            defen = [initialKyokuPoint[i] + tenshuChange[i] for i in range(4)]
+            rank = [0] * len(defen)
+            for i, x in enumerate(sorted(range(len(defen)), key=lambda y: defen[y], reverse=True)):
+                rank[x] = i + 1
+            print(f'final defen {defen} and rank{rank}')
 
-fileObj = open("paipu.txt", "r", encoding="utf-8")
-lines = fileObj.read().splitlines()
-fileObj.close()
-title = ''
-player = ''
-qijia = ''
-log = []
-defen = []
-rank = []
-point = [0, 0, 0, 0]
-for i, kyokuStr in enumerate(lines):
-    kyoku = json.loads(kyokuStr)
-    # 半庄开始
-    if i == 0:
-        title = kyoku['title'][0]
-        player = kyoku['name']
-        qijia = EAST
-    log.append(parseKyoku(kyoku['log']))
-    if i == len(lines) - 1:
-        initialKyokuPoint = kyoku['log'][0][1]
-        tenshuChange = kyoku['log'][0][16][1]
-        print(f'all last initial:{initialKyokuPoint} and tenshu change: {tenshuChange}')
-        defen = [initialKyokuPoint[i] + tenshuChange[i] for i in range(4)]
-        rank = [0] * len(defen)
-        for i, x in enumerate(sorted(range(len(defen)), key=lambda y: defen[y], reverse=True)):
-            rank[x] = i + 1
-        print(f'final defen {defen} and rank{rank}')
+        print("=======================")
+    kobaPaipu = KobalabPaipu(title, player, qijia, log, defen, rank, point)
+    kobaReport = json.dumps(kobaPaipu,
+                            default=lambda l: dict(
+                                (key, value) for key, value in l.encode().items() if value is not None),
+                            ensure_ascii=False)
 
-
-    print("=======================")
-kobaPaipu = KobalabPaipu(title, player, qijia, log, defen, rank, point)
-kobaReport = json.dumps(kobaPaipu,
-                             default=lambda l: dict(
-                                 (key, value) for key, value in l.encode().items() if value is not None),
-                             ensure_ascii=False)
-
-print(f"Should be all OK to write: {kobaReport}")
-with open("SegaSammy_No1.json", "w") as outfile:
-    outfile.write(kobaReport)
-
-# kyokustr = """{"title":["セガサミーフェニックスNo.1　決定戦","最強戦ルール"],"name":["東城りお","茅森早香","近藤誠一","魚谷侑未"],"rule":{"disp":"セガサミーフェニックスNo.1　決定戦","aka":0},"log":[[[1,0,0],[23000,29000,24000,24000],[25],[35],[39,39,39,35,36,42,28,24,31,31,15,13,18],[12,17,28,32,43,47,11,38,32,38,43,45,45,19,32],[42,15,24,28,28,60,32,60,43,60,60,60,60,"r32",60],[38,34,18,27,42,28,27,18,34,47,37,36,27],[19,41,43,21,23,44,33,47,35,44,29,46,41,21,14,26],[42,60,60,60,19,60,34,60,47,60,60,60,60,"r28",60,60],[21,22,23,24,16,16,17,41,44,25,34,25,29],[38,24,42,16,37,45,12,17,23,25,41,33,35,29,18],[41,29,44,38,60,60,60,34,"r42",60,60,60,60,60,60],[11,12,13,14,14,15,37,22,24,26,27,45,46],[42,22,36,47,13,46,31,19,43,14,11,32,36,22,11],[60,46,45,60,11,24,60,60,60,12,37,46,32,11,60],["和了",[0,-2600,5600,0],[2,1,2,"40符2飜2600点","立直(1飜)","ドラ(1飜)"]]]]}"""
-# kyoku = json.loads(kyokustr)
-# parseKyoku(kyoku['log'])
+    print(f"Should be all OK to write: {kobaReport}")
+    return kobaReport
