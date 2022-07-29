@@ -3,47 +3,9 @@ import json
 import re
 
 from KobalabPaipu import QiPai, QiPaiWrapper, PaiAction, ZimoWrapper, FulouWrapper, KaiGangWrapper, KaiGang, \
-    GangWrapper, GangZimoWrapper, DaPaiWrapper
+    GangWrapper, GangZimoWrapper, DaPaiWrapper, Hule, HuleWrapper, PingjuWrapper, Pingju, KobalabPaipu
 from mahjong.MahjongTransfer import MahjongTransfer
 from mahjong.util.MAJING_CONSTANT import EAST, SOUTH, WEST, NORTH
-
-# print(gameReport1['log'])
-# # [局数，本场，场供]
-# print(f'changfeng', gameReport1['log'][0][0])
-# print(f'fenshu', gameReport1['log'][0][1])
-# print(f'baopai', gameReport1['log'][0][2])
-# print(f'fubaopai', gameReport1['log'][0][3])
-# print('------------------------------')
-# # 初始手牌
-# print(gameReport1['log'][0][4])
-# print(gameReport1['log'][0][7])
-# print(gameReport1['log'][0][10])
-# print(gameReport1['log'][0][13])
-# print('------------------------------')
-# print(gameReport1['log'][0][5])
-# print(gameReport1['log'][0][6])
-# print('------------------------------')
-# print(gameReport1['log'][0][8])
-# print(gameReport1['log'][0][9])
-# print('------------------------------')
-# print(gameReport1['log'][0][11])
-# print(gameReport1['log'][0][12])
-# print('------------------------------')
-# print(gameReport1['log'][0][14])
-# print(gameReport1['log'][0][15])
-# print('------------------------------')
-# print(gameReport1['log'][0][16])
-#
-# agariYaku = gameReport1['log'][0][16][2][4:]
-# print(agariYaku)
-#
-# s = agariYaku[0]
-# index = s.find('(')
-# yaku = s[0:index]
-# han = s[index + 1: index + 2]
-# print(yaku)
-# print(han)
-
 
 SHANGJIA_NOTATION = '-'
 DUIJIA_NOTION = '='
@@ -221,14 +183,16 @@ def buildHands(zimoHand, fulouHand, agariPai=None):
     return handStr
 
 
-def resetYifa(riichiYifa, player=None):
-    if not player :
-        if 'RI' in riichiYifa[player]:
+def resetYifa(riichiYifa, player=-1):
+    if player >= 0:
+        if riichiYifa[player] == 'RI':
             riichiYifa[player] = 'R'
     else:
         for i, rI in enumerate(riichiYifa):
             if 'RI' in rI:
                 riichiYifa[i] = 'R'
+            else:
+                riichiYifa[i] = ''
 
 
 def parseKyoku(kyokuReport):
@@ -313,8 +277,9 @@ def parseKyoku(kyokuReport):
     isHaidi = False
     isHedi = False
     isQiangGang = False
-    riichiYifa = []  # 检查立直一发的
+    riichiYifa = ['', '', '', '']  # 检查立直一发的
     remainTile = 70
+    junme = 1
 
     while True:
         if action == 'M':
@@ -325,7 +290,7 @@ def parseKyoku(kyokuReport):
                     agariPai = mopai
                     if currentPlayerIndex == EAST and len(mopaiAction[EAST] == 0):
                         isTianhe = True
-                    elif currentPlayerIndex != EAST and len(mopaiAction[currentPlayerIndex]) == 0 and not chiPengKang:
+                    elif currentPlayerIndex != EAST and junme == 1 and not chiPengKang:
                         isDihe = True
                     else:
                         if kangExists:
@@ -347,6 +312,7 @@ def parseKyoku(kyokuReport):
                     break
 
             else:
+                junme = -1
                 resetYifa(riichiYifa, currentPlayerIndex)
                 if kangExists and previous == 'D':
                     resetYifa(riichiYifa)
@@ -365,6 +331,7 @@ def parseKyoku(kyokuReport):
                 elif type(mopai) == str and ('m' in mopai or 'p' in mopai or 'c' in mopai):
                     resetYifa(riichiYifa)
                     chiPengKang = True
+                    junme = -1
                     fulouDict = fulou(mopai)
                     lst = []
                     for tile in fulouDict['showHand']:
@@ -399,6 +366,7 @@ def parseKyoku(kyokuReport):
             if type(dapai) == str and 'a' in dapai:
                 resetYifa(riichiYifa)
                 chiPengKang = True
+                junme = -1
                 fulouDict = fulou(dapai)
                 lst = []
                 for tile in fulouDict['showHand']:
@@ -418,6 +386,7 @@ def parseKyoku(kyokuReport):
 
             elif type(dapai) == str and 'k' in dapai:
                 chiPengKang = True
+                junme = -1
                 fulouDict = fulou(dapai)
                 pLst = ['p'] + fulouDict['showHand']  # 加杠必定纯在已经被碰掉的情况
                 index = fulouHand[currentPlayerIndex].index(pLst)
@@ -440,11 +409,9 @@ def parseKyoku(kyokuReport):
                     kobaPai = tenhouNumToPai(dapai, mopai)
                     dapai = mopai  # 因为是摸切
                     tenhouShoupai[currentPlayerIndex].remove(mopai)
-                    riichiYifa[currentPlayerIndex] = 'RI'
                 elif type(dapai) == str and 'r' in dapai:
                     kobaPai = tenhouNumToPai(dapai)
                     tenhouShoupai[currentPlayerIndex].remove(int(dapai[1:]))
-                    riichiYifa[currentPlayerIndex] = 'RI'
                 else:
                     kobaPai = tenhouNumToPai(dapai)
                     tenhouShoupai[currentPlayerIndex].remove(dapai)
@@ -461,16 +428,23 @@ def parseKyoku(kyokuReport):
                         isHedi = True
                     break
                 else:
+                    if type(dapai) == str and 'r' in dapai:
+                        riichiYifa[currentPlayerIndex] = 'RI'
                     shangjia = (currentPlayerIndex + 3) % 4
                     duijia = (currentPlayerIndex + 2) % 4
                     xiajia = (currentPlayerIndex + 1) % 4
                     if len(mopaiAction[duijia]) != 0 and bool(re.search('[pm]', str(mopaiAction[duijia][0]))) \
                             and str(dapai) in mopaiAction[duijia][0]:
+                        junme = -1
                         currentPlayerIndex = duijia
                     elif len(mopaiAction[shangjia]) != 0 and bool(re.search('[pm]', str(mopaiAction[shangjia][0]))) \
                             and str(dapai) in mopaiAction[shangjia][0]:
+                        junme = -1
                         currentPlayerIndex = shangjia
                     else:
+                        if len(mopaiAction[xiajia]) != 0 and bool(re.search('[pm]', str(mopaiAction[xiajia][0]))) \
+                                and str(dapai) in mopaiAction[xiajia][0]:
+                            junme = -1
                         currentPlayerIndex = xiajia
 
     gameResult = kyokuReport[0][16]
@@ -510,14 +484,47 @@ def parseKyoku(kyokuReport):
                 print(f'final innner {finalInner} fulouhand {fulouHand[agariPlayer]}')
                 break
             for g in group:
-                g.setSpecial(agariPlayer, changfeng)
+                g.setSpecial(agariPlayer, changfeng,
+                             tianhe=isTianhe, dihe=isDihe,
+                             isLingShang=isLingShang, isQiangGang=isQiangGang,
+                             isRiichi=('R' in riichiYifa[agariPlayer]), isYifa=('I' in riichiYifa[agariPlayer]),
+                             isHedi=isHedi, isHaidi=isHaidi)
                 g.setDora(baopaiLst, fubaopaiLst)
                 g.finalCheck()
 
             group.sort(key=lambda x: (x.score, x.fan, x.fu), reverse=True)
-            print(group[0])
+            agariGroup = group[0]
+            l = agariPlayer
+            shoupai = agariShoupai
+            baojia = houjyuPlayer if ronFormat == 'R' else None
+            fubaopai = None if len(fubaopaiLst) == 0 else [tenhouNumToPai(tile) for tile in fubaopaiLst]
+            fu = agariGroup.fu if len(agariGroup.yakumans) == 0 else None
+            fan = agariGroup.fan if len(agariGroup.yakumans) == 0 else None
+            defen = agariGroup.score
+            damanguan = 1 if len(agariGroup.yakumans) > 0 else None
+            hupai = [yakuman for yakuman in agariGroup.yakumans] if len(agariGroup.yakumans) > 0 \
+                else [yaku for yaku in agariGroup.yakus]
+
+            hule = Hule(l=agariPlayer, shoupai=agariShoupai, baojia=baojia,
+                        fubaopai=fubaopai,
+                        fu=fu, fanshu=fan, damanguan=damanguan,
+                        defen=defen, hupai=hupai, fenpei=fenpei)
+            huleWrapper = HuleWrapper(hule)
+            gameStep.append(huleWrapper)
     else:
         print(f'Ryukyoku')
+        fenpei = gameResult[1]
+        fenpei = fenpei[jushu:] + fenpei[0:jushu]
+        print(f'流局分数分配{fenpei}')
+        shoupai = []
+        for i, fenshu in enumerate(fenpei):
+            if fenshu > 0:
+                shoupai.append(buildHands(tenhouShoupai[i], kobaFulouHand[i]))
+            else:
+                shoupai.append('')
+        pinju = PingjuWrapper(Pingju(name='流局', shoupai=shoupai, fenpei=fenpei))
+        gameStep.append(pinju)
+
         print(
             f'东家 {tenhouShoupai[EAST]} fulou: {fulouHand[EAST]} convert to koba: {buildHands(tenhouShoupai[EAST], kobaFulouHand[EAST])}')
         print(
@@ -526,16 +533,51 @@ def parseKyoku(kyokuReport):
             f'西家 {tenhouShoupai[WEST]} fulou:{fulouHand[WEST]} convert to koba:{buildHands(tenhouShoupai[WEST], kobaFulouHand[WEST])}')
         print(
             f'北家 {tenhouShoupai[NORTH]} fulou:{fulouHand[NORTH]} convert to koba:{buildHands(tenhouShoupai[NORTH], kobaFulouHand[NORTH])}')
-    # print(
-    #     json.dumps(gameStep,
-    #                default=lambda l: dict((key, value) for key, value in l.encode().items() if value is not None),
-    #                ensure_ascii=False))
+    print("========================")
+    kyokuReport = json.dumps(gameStep,
+                             default=lambda l: dict(
+                                 (key, value) for key, value in l.encode().items() if value is not None),
+                             ensure_ascii=False)
+    print(f'kyokuReport: {kyokuReport}')
+    return gameStep
 
 
 fileObj = open("paipu.txt", "r", encoding="utf-8")
 lines = fileObj.read().splitlines()
 fileObj.close()
-for kyokuStr in lines:
+title = ''
+player = ''
+qijia = ''
+log = []
+defen = []
+rank = []
+point = [0, 0, 0, 0]
+for i, kyokuStr in enumerate(lines):
     kyoku = json.loads(kyokuStr)
-    parseKyoku(kyoku['log'])
+    # 半庄开始
+    if i == 0:
+        title = kyoku['title'][0]
+        player = kyoku['name']
+        qijia = EAST
+    log.append(parseKyoku(kyoku['log']))
+    if i == len(lines) - 1:
+        initialKyokuPoint = kyoku['log'][0][1]
+        tenshuChange = kyoku['log'][0][16][1]
+        print(f'all last initial:{initialKyokuPoint} and tenshu change: {tenshuChange}')
+        defen = [initialKyokuPoint[i] + tenshuChange[i] for i in range(4)]
+        rank = [0] * len(defen)
+        for i, x in enumerate(sorted(range(len(defen)), key=lambda y: defen[y], reverse=True)):
+            rank[x] = i + 1
+        print(f'final defen {defen} and rank{rank}')
+
+
     print("=======================")
+kobaPaipu = KobalabPaipu(title, player, qijia, log, defen, rank, point)
+kobaReport = json.dumps(kobaPaipu,
+                             default=lambda l: dict(
+                                 (key, value) for key, value in l.encode().items() if value is not None),
+                             ensure_ascii=False)
+print(f"Should be all OK to write: {kobaReport}")
+# kyokustr = """{"title":["セガサミーフェニックスNo.1　決定戦","最強戦ルール"],"name":["東城りお","茅森早香","近藤誠一","魚谷侑未"],"rule":{"disp":"セガサミーフェニックスNo.1　決定戦","aka":0},"log":[[[1,0,0],[23000,29000,24000,24000],[25],[35],[39,39,39,35,36,42,28,24,31,31,15,13,18],[12,17,28,32,43,47,11,38,32,38,43,45,45,19,32],[42,15,24,28,28,60,32,60,43,60,60,60,60,"r32",60],[38,34,18,27,42,28,27,18,34,47,37,36,27],[19,41,43,21,23,44,33,47,35,44,29,46,41,21,14,26],[42,60,60,60,19,60,34,60,47,60,60,60,60,"r28",60,60],[21,22,23,24,16,16,17,41,44,25,34,25,29],[38,24,42,16,37,45,12,17,23,25,41,33,35,29,18],[41,29,44,38,60,60,60,34,"r42",60,60,60,60,60,60],[11,12,13,14,14,15,37,22,24,26,27,45,46],[42,22,36,47,13,46,31,19,43,14,11,32,36,22,11],[60,46,45,60,11,24,60,60,60,12,37,46,32,11,60],["和了",[0,-2600,5600,0],[2,1,2,"40符2飜2600点","立直(1飜)","ドラ(1飜)"]]]]}"""
+# kyoku = json.loads(kyokustr)
+# parseKyoku(kyoku['log'])

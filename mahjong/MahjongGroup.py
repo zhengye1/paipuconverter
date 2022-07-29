@@ -51,7 +51,8 @@ class MahjongGroup:
         self.uraDora = ura
 
     def setSpecial(self, selfWind, placeWind, isRiichi=False, isWReach=False,
-                   isYifa=False, isLingShang=False, isQiangGang=False, tianhe=False, dihe=False):
+                   isYifa=False, isLingShang=False, isQiangGang=False, tianhe=False, dihe=False, isHedi=False,
+                   isHaidi=False):
         self.isTianhe = tianhe
         self.isDihe = dihe
         self.selfWind = selfWind
@@ -304,7 +305,8 @@ class MahjongGroup:
 
     def checkPinfu(self, ronType):
         if self.isMenzen and self.checkAllShunzi() and ronType == LIANGMIAN and \
-                self.duizi < 40 or (41 <= self.duizi <= 44 and self.duizi != self.selfWind + 41 and self.duizi != self.placeWind + 41):
+                self.duizi < 40 or (
+                41 <= self.duizi <= 44 and self.duizi != self.selfWind + 41 and self.duizi != self.placeWind + 41):
             self.yakus.append(Yaku(YAKU_LIST[3], 1))
             self.isPinfuKei = True
 
@@ -362,8 +364,8 @@ class MahjongGroup:
             for j in range(i + 1, len(self.mianzis)):
                 for k in range(i + 2, len(self.mianzis)):
                     fMianzi = self.mianzis[i]
-                    sMianzi = self.mianzis[i + 1]
-                    tMianzi = self.mianzis[i + 2]
+                    sMianzi = self.mianzis[j]
+                    tMianzi = self.mianzis[k]
                     if fMianzi.mianziType == sMianzi.mianziType == tMianzi.mianziType == SHUNZI and (
                             fMianzi.startTile // 10 == sMianzi.startTile // 10 == tMianzi.startTile // 10):
                         startTileLst = [fMianzi.startTile % 10, sMianzi.startTile % 10, tMianzi.startTile % 10]
@@ -380,8 +382,8 @@ class MahjongGroup:
             for j in range(i + 1, len(self.mianzis)):
                 for k in range(i + 2, len(self.mianzis)):
                     fMianzi = self.mianzis[i]
-                    sMianzi = self.mianzis[i + 1]
-                    tMianzi = self.mianzis[i + 2]
+                    sMianzi = self.mianzis[j]
+                    tMianzi = self.mianzis[k]
                     if fMianzi.mianziType == sMianzi.mianziType == tMianzi.mianziType == SHUNZI and (
                             fMianzi.startTile % 10 == sMianzi.startTile % 10 == tMianzi.startTile % 10):
                         startTileLst = [fMianzi.startTile // 10, sMianzi.startTile // 10, tMianzi.startTile // 10]
@@ -414,8 +416,8 @@ class MahjongGroup:
             for j in range(i + 1, len(self.mianzis)):
                 for k in range(i + 2, len(self.mianzis)):
                     fMianzi = self.mianzis[i]
-                    sMianzi = self.mianzis[i + 1]
-                    tMianzi = self.mianzis[i + 2]
+                    sMianzi = self.mianzis[j]
+                    tMianzi = self.mianzis[k]
                     if (fMianzi.mianziType == sMianzi.mianziType == tMianzi.mianziType == KEZI) and (
                             fMianzi.startTile % 10 == sMianzi.startTile % 10 == tMianzi.startTile % 10):
                         startTileLst = [fMianzi.startTile // 10, sMianzi.startTile // 10, tMianzi.startTile // 10]
@@ -428,8 +430,8 @@ class MahjongGroup:
             for j in range(i + 1, len(self.mianzis)):
                 for k in range(i + 2, len(self.mianzis)):
                     fMianzi = self.mianzis[i]
-                    sMianzi = self.mianzis[i + 1]
-                    tMianzi = self.mianzis[i + 2]
+                    sMianzi = self.mianzis[j]
+                    tMianzi = self.mianzis[k]
                     if (fMianzi.mianziType >= KEZI and sMianzi.mianziType >= KEZI and tMianzi.mianziType >= KEZI) and \
                             (not fMianzi.fulou and not sMianzi.fulou and not tMianzi.fulou):
                         if self.ronTile in [fMianzi.startTile, sMianzi.startTile,

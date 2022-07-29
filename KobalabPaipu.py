@@ -134,7 +134,7 @@ class HuleWrapper:
         return ignoreNoneEncode(self.__dict__)
 
 
-class Pinju:
+class Pingju:
     def __init__(self, name, shoupai, fenpei):
         self.name = name
         self.shoupai = shoupai
