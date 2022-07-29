@@ -221,26 +221,14 @@ def buildHands(zimoHand, fulouHand, agariPai=None):
     return handStr
 
 
-def getFuFan(fuFan):
-    fu = ''
-    fan = ''
-    defen = ''
-    if '符' in fuFan:
-        fu = int(fuFan[0:fuFan.index('符')])
-        fan = int(fuFan[fuFan.index('符') + 1:fuFan.index('飜')])
-        defen = fuFan[fuFan.index('飜') + 1:fuFan.index('点')]
+def resetYifa(riichiYifa, player=None):
+    if not player :
+        if 'RI' in riichiYifa[player]:
+            riichiYifa[player] = 'R'
     else:
-        pointIndex = re.search(r"\d", fuFan)
-        defen = fuFan[pointIndex.start():fuFan.index('点')]
-
-    if '∀' in fuFan:
-        defen = int(defen) * 3
-    elif '-' in fuFan:
-        lowPay = defen[0:defen.index('-')]
-        highPay = defen[defen.index('-') + 1:]
-        defen = int(lowPay) * 2 + int(highPay)
-
-    return {'fu': fu, 'fan': fan, 'defen': int(defen)}
+        for i, rI in enumerate(riichiYifa):
+            if 'RI' in rI:
+                riichiYifa[i] = 'R'
 
 
 def parseKyoku(kyokuReport):
@@ -324,6 +312,8 @@ def parseKyoku(kyokuReport):
     isLingShang = False
     isHaidi = False
     isHedi = False
+    isQiangGang = False
+    riichiYifa = []  # 检查立直一发的
     remainTile = 70
 
     while True:
@@ -357,7 +347,9 @@ def parseKyoku(kyokuReport):
                     break
 
             else:
+                resetYifa(riichiYifa, currentPlayerIndex)
                 if kangExists and previous == 'D':
+                    resetYifa(riichiYifa)
                     kangExists = False
                     baopaiIndex += 1
                     kaigang = KaiGangWrapper(KaiGang(tenhouNumToPai(baopaiLst[baopaiIndex])))
@@ -371,6 +363,7 @@ def parseKyoku(kyokuReport):
 
                 # 大明杠
                 elif type(mopai) == str and ('m' in mopai or 'p' in mopai or 'c' in mopai):
+                    resetYifa(riichiYifa)
                     chiPengKang = True
                     fulouDict = fulou(mopai)
                     lst = []
@@ -404,6 +397,7 @@ def parseKyoku(kyokuReport):
         else:
             dapai = dapaiAction[currentPlayerIndex].pop(0)
             if type(dapai) == str and 'a' in dapai:
+                resetYifa(riichiYifa)
                 chiPengKang = True
                 fulouDict = fulou(dapai)
                 lst = []
@@ -432,6 +426,11 @@ def parseKyoku(kyokuReport):
                 gang = GangWrapper(PaiAction(currentPlayerIndex, m=fulouDict['kobaStr']))
                 gameStep.append(gang)
                 tenhouShoupai[currentPlayerIndex].remove(fulouDict['fulouPai'])
+                if terminateCondition(mopaiAction, mopaiLength, dapaiAction, dapaiLength)['terminate']:
+                    isQiangGang = True
+                    agariPai = dapai
+                    break
+                resetYifa(riichiYifa)
                 kangExists = True
                 action = 'M'
                 previous = 'D'
@@ -441,9 +440,11 @@ def parseKyoku(kyokuReport):
                     kobaPai = tenhouNumToPai(dapai, mopai)
                     dapai = mopai  # 因为是摸切
                     tenhouShoupai[currentPlayerIndex].remove(mopai)
+                    riichiYifa[currentPlayerIndex] = 'RI'
                 elif type(dapai) == str and 'r' in dapai:
                     kobaPai = tenhouNumToPai(dapai)
                     tenhouShoupai[currentPlayerIndex].remove(int(dapai[1:]))
+                    riichiYifa[currentPlayerIndex] = 'RI'
                 else:
                     kobaPai = tenhouNumToPai(dapai)
                     tenhouShoupai[currentPlayerIndex].remove(dapai)
@@ -455,7 +456,7 @@ def parseKyoku(kyokuReport):
                 # 打出去的要是结束如果没牌暂且算上是河底
                 if terminateDict['terminate'] and terminateDict['terminateBy'] == 'R':
                     agariPai = mopai if dapai == 'r60' or dapai == 60 else dapai
-                    agariPai = int(dapai[1:]) if type(dapai) == str and 'r' in dapai else dapai # 燕返
+                    agariPai = int(dapai[1:]) if type(dapai) == str and 'r' in dapai else dapai  # 燕返
                     if remainTile == 0:
                         isHedi = True
                     break
@@ -485,7 +486,8 @@ def parseKyoku(kyokuReport):
             print(f'index + 1 {gameResult[index + 1]}')
             if terminateDict['terminateBy'] == 'Z':
                 # find the correct zimo place
-                agariShoupai = buildHands(tenhouShoupai[currentPlayerIndex], kobaFulouHand[currentPlayerIndex], agariPai)
+                agariShoupai = buildHands(tenhouShoupai[currentPlayerIndex], kobaFulouHand[currentPlayerIndex],
+                                          agariPai)
                 agariPlayer = currentPlayerIndex
                 ronFormat = 'Z'
                 print(agariShoupai)
@@ -494,7 +496,8 @@ def parseKyoku(kyokuReport):
                 agariPlayer = (gameResult[index + 1][0] - ju) % 4
                 houjyuPlayer = (gameResult[index + 1][1] - ju) % 4
                 agariShoupai = buildHands(tenhouShoupai[agariPlayer], kobaFulouHand[agariPlayer], agariPai)
-                print(f'jushu {jushu} Ron by {agariPlayer} <- {houjyuPlayer} with hand {agariShoupai} and agaripai {agariPai}')
+                print(
+                    f'jushu {jushu} Ron by {agariPlayer} <- {houjyuPlayer} with hand {agariShoupai} and agaripai {agariPai}')
                 ronFormat = 'R'
             finalInner = [h if h // 10 != 5 else (h % 10 * 10) for h in tenhouShoupai[agariPlayer]]
             finalInner.append(agariPai)
@@ -502,7 +505,6 @@ def parseKyoku(kyokuReport):
             transfer.ronFormat = ronFormat
             group = transfer.toMahjongGroup()
             if len(group) == 0:
-
                 print(f'Tenhou shoupai {tenhouShoupai[agariPlayer]} and fulou hand: {fulouHand[agariPlayer]}')
                 print(f'baopai {baopaiLst} ura {fubaopaiLst}')
                 print(f'final innner {finalInner} fulouhand {fulouHand[agariPlayer]}')
