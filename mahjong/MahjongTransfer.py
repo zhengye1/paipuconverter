@@ -300,15 +300,15 @@ class MahjongTransfer:
         return finalSetGroup
 
 
-# transfer = MahjongTransfer([11, 11, 11, 13, 14, 15, 22, 31, 31, 31, 43, 43, 43, 22], [], 22)
+# transfer = MahjongTransfer([14, 10, 21, 22, 23, 24, 25, 26, 28, 28, 34, 30, 36, 16], [], 16)
 # transfer.ronFormat = 'R'
 # group = transfer.toMahjongGroup()
 # for g in group:
-#     g.setSpecial(EAST, SOUTH)
-#     g.setDora([26], [])
+#     g.setSpecial(SOUTH, EAST, isRiichi=True)
+#     g.setDora([33], [24])
 #     g.finalCheck()
 #     print(g)
 #     print("=================")
 #
 # group.sort(key=lambda x: (x.score, x.fan, x.fu), reverse=True)
-# print(group[0])
+# #print(group[0])

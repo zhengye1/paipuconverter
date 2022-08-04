@@ -185,6 +185,44 @@ def buildHands(zimoHand, fulouHand, agariPai=None):
     return handStr
 
 
+def checkTenhouChiiHou(mopaiAction, dapaiAction):
+    tenhouChiiHouChance = [False] * 4
+    # 可能天和
+    if len(dapaiAction[EAST]) == len(mopaiAction[SOUTH]) \
+            == len(mopaiAction[WEST]) == len(mopaiAction[NORTH]) == 0 \
+            and len(mopaiAction[EAST]) == 1:
+        tenhouChiiHouChance[EAST] = True
+        return tenhouChiiHouChance
+
+    # 南家地和
+    if len(mopaiAction[SOUTH]) == 1 and len(dapaiAction[SOUTH]) == 0:
+        if type(dapaiAction[EAST][0]) != str or (type(dapaiAction[EAST][0]) == str and 'r' in dapaiAction[EAST][0]) and \
+                len(mopaiAction[WEST]) == len(mopaiAction[NORTH]) == 0:
+            tenhouChiiHouChance[SOUTH] = True
+            return tenhouChiiHouChance
+
+    # 西家地和
+    if len(mopaiAction[WEST]) == 1 and len(dapaiAction[WEST]) == 0:
+        if type(dapaiAction[EAST][0]) != str or (type(dapaiAction[EAST][0]) == str and 'r' in dapaiAction[EAST][0]) and \
+                type(dapaiAction[SOUTH][0]) != str or (
+                type(dapaiAction[SOUTH][0]) == str and 'r' in dapaiAction[SOUTH][0]) and \
+                len(mopaiAction[NORTH]) == 0:
+            tenhouChiiHouChance[WEST] = True
+            return tenhouChiiHouChance
+
+    # 北家地和
+    if len(mopaiAction[NORTH]) == 1 and len(dapaiAction[NORTH]) == 0:
+        if type(dapaiAction[EAST][0]) != str or (type(dapaiAction[EAST][0]) == str and 'r' in dapaiAction[EAST][0]) and \
+                type(dapaiAction[SOUTH][0]) != str or (
+                type(dapaiAction[SOUTH][0]) == str and 'r' in dapaiAction[SOUTH][0]) and \
+                type(dapaiAction[WEST][0]) != str or (
+                type(dapaiAction[WEST][0]) == str and 'r' in dapaiAction[WEST][0]):
+            tenhouChiiHouChance[NORTH] = True
+        return tenhouChiiHouChance
+
+    return tenhouChiiHouChance
+
+
 def resetYifa(riichiYifa, player=-1):
     if player >= 0:
         if riichiYifa[player] == 'RI':
@@ -542,6 +580,7 @@ def parseKyoku(kyokuReport):
                              ensure_ascii=False)
     print(f'kyokuReport: {kyokuReport}')
     return gameStep
+
 
 def parseHanchan(tenhouLine, ruleSet={}):
     title = ''

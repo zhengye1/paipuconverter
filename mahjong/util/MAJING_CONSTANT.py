@@ -1,4 +1,6 @@
 # 面子类型
+from mahjong.RuleSet import RuleSet
+
 SHUNZI = 0
 KEZI = 1
 GANG = 2
@@ -31,3 +33,8 @@ SOUZI = 3
 JIPAI = 4
 
 HATSU = 46
+
+M_LEAGUE_RULE = RuleSet(25000, 30000, [50, 10, -10, -30], True, True, True, True, 2, False, False, True, False,
+                        "divided", "top")
+SAIKYOSEN_RULE = RuleSet(25000, 30000, [50, 10, -10, -30], False, True, True, True, 2, False, False, True, False,
+                         "closed qijia", "top")
