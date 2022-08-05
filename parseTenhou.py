@@ -11,8 +11,10 @@ DUIJIA_NOTION = '='
 XIAJIA_NOTATION = '+'
 ruleSet = {}
 
+
 def setupRuleSet():
     pass
+
 
 def listHandToKobaStr(hand):
     kobaDict = {'m': [], 'p': [], 's': [], 'z': []}
@@ -212,11 +214,12 @@ def checkTenhouChiiHou(mopaiAction, dapaiAction):
 
     # 北家地和
     if len(mopaiAction[NORTH]) == 1 and len(dapaiAction[NORTH]) == 0:
-        if type(dapaiAction[EAST][0]) != str or (type(dapaiAction[EAST][0]) == str and 'r' in dapaiAction[EAST][0]) and \
-                type(dapaiAction[SOUTH][0]) != str or (
-                type(dapaiAction[SOUTH][0]) == str and 'r' in dapaiAction[SOUTH][0]) and \
-                type(dapaiAction[WEST][0]) != str or (
-                type(dapaiAction[WEST][0]) == str and 'r' in dapaiAction[WEST][0]):
+        if (type(dapaiAction[EAST][0]) != str or (
+                type(dapaiAction[EAST][0]) == str and 'r' in dapaiAction[EAST][0])) and \
+                (type(dapaiAction[SOUTH][0]) != str or (
+                        type(dapaiAction[SOUTH][0]) == str and 'r' in dapaiAction[SOUTH][0])) and \
+                (type(dapaiAction[WEST][0]) != str or (
+                        type(dapaiAction[WEST][0]) == str and 'r' in dapaiAction[WEST][0])):
             tenhouChiiHouChance[NORTH] = True
         return tenhouChiiHouChance
 
