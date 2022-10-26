@@ -305,8 +305,8 @@ class MahjongGroup:
 
     def checkPinfu(self, ronType):
         if self.isMenzen and self.checkAllShunzi() and ronType == LIANGMIAN and \
-                self.duizi < 40 or (
-                41 <= self.duizi <= 44 and self.duizi != self.selfWind + 41 and self.duizi != self.placeWind + 41):
+                (self.duizi < 40 or (
+                41 <= self.duizi <= 44 and self.duizi != self.selfWind + 41 and self.duizi != self.placeWind + 41)):
             self.yakus.append(Yaku(YAKU_LIST[3], 1))
             self.isPinfuKei = True
 

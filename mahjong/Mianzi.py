@@ -24,7 +24,7 @@ class Mianzi:
         return lst
 
     def __str__(self):
-        baseMessage = "Mianzi(" + str(self.lst) + ") "
+        baseMessage = "Mianzi(" + str(self.lst) + ") with start tile " + str(self.startTile)
         if self.fulou:
             baseMessage = "Open " + baseMessage
         else:
