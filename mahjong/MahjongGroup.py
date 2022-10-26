@@ -663,7 +663,7 @@ class MahjongGroup:
         for i, d in enumerate(doraLst):
             if d < 40:
                 if d % 10 == 9:
-                    doraLst[i] = d // 10 + 1
+                    doraLst[i] = d // 10 * 10 + 1
                 elif d % 10 == 0:
                     # 红5了
                     doraLst[i] = d + 6

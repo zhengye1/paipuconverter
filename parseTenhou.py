@@ -55,7 +55,7 @@ def tenhouNumToPai(tenhouNum, pai=None):
     if type(tenhouNum) == str and 'r' in tenhouNum:
         wordToConvert = tenhouNum[1:]
         riichi = '*'
-        if pai == int(wordToConvert):
+        if int(wordToConvert) == 60:
             tsumokiri = '_'
     elif tenhouNum == 60:
         wordToConvert = pai
@@ -201,7 +201,7 @@ def resetYifa(riichiYifa, player=-1):
                 riichiYifa[i] = ''
 
 
-def parseKyoku(kyokuReport):
+def parseKyoku(kyokuReport, ruleSet=None):
     # return Qipai object
     ju = kyokuReport[0][0][0]
     changfeng = ju // 4
@@ -281,6 +281,11 @@ def parseKyoku(kyokuReport):
     isHedi = False
     isQiangGang = False
     riichiYifa = ['', '', '', '']  # 检查立直一发的
+    if ruleSet and not ruleSet.yifa:
+        RIICHI_YIFA = 'R'
+    else:
+        RIICHI_YIFA = 'RI'
+
     remainTile = 70
     tenhouChiiHouCheck = checkTenhouChiiHou(mopaiAction, dapaiAction)
     wReachChanceCheck = checkWReach(mopaiAction, dapaiAction)
@@ -316,8 +321,9 @@ def parseKyoku(kyokuReport):
                     resetYifa(riichiYifa)
                     kangExists = False
                     baopaiIndex += 1
-                    kaigang = KaiGangWrapper(KaiGang(tenhouNumToPai(baopaiLst[baopaiIndex])))
-                    gameStep.append(kaigang)
+                    if ruleSet and ruleSet.kanAri:
+                        kaigang = KaiGangWrapper(KaiGang(tenhouNumToPai(baopaiLst[baopaiIndex])))
+                        gameStep.append(kaigang)
                     gangzimo = GangZimoWrapper(PaiAction(currentPlayerIndex, p=tenhouNumToPai(mopai)))
                     gameStep.append(gangzimo)
                     tenhouShoupai[currentPlayerIndex].append(mopai)
@@ -427,7 +433,7 @@ def parseKyoku(kyokuReport):
                     break
                 else:
                     if type(dapai) == str and 'r' in dapai:
-                        riichiYifa[currentPlayerIndex] = 'RI'
+                        riichiYifa[currentPlayerIndex] = RIICHI_YIFA
                     shangjia = (currentPlayerIndex + 3) % 4
                     duijia = (currentPlayerIndex + 2) % 4
                     xiajia = (currentPlayerIndex + 1) % 4
@@ -487,8 +493,8 @@ def parseKyoku(kyokuReport):
                              dihe=agariPlayer != EAST and tenhouChiiHouCheck[agariPlayer],
                              isLingShang=isLingShang, isQiangGang=isQiangGang,
                              isRiichi=('R' in riichiYifa[agariPlayer] and not wReachChanceCheck[agariPlayer]),
-                             isWReach=('R' in riichiYifa[agariPlayer] and wReachCheck[agariPlayer]),
-                             isYifa=('I' in riichiYifa[agariPlayer]),
+                             isWReach=('R' in riichiYifa[agariPlayer] and wReachChanceCheck[agariPlayer]),
+                             isYifa=('RI' in riichiYifa[agariPlayer]),
                              isHedi=isHedi, isHaidi=isHaidi)
                 g.setDora(baopaiLst, fubaopaiLst)
                 g.finalCheck()
@@ -541,7 +547,7 @@ def parseKyoku(kyokuReport):
     return gameStep
 
 
-def parseHanchan(tenhouLine, ruleSet={}):
+def parseHanchan(tenhouLine, ruleSet=None):
     title = ''
     player = ''
     qijia = ''
@@ -556,7 +562,7 @@ def parseHanchan(tenhouLine, ruleSet={}):
             title = kyoku['title'][0]
             player = kyoku['name']
             qijia = EAST
-        log.append(parseKyoku(kyoku['log']))
+        log.append(parseKyoku(kyoku['log'], ruleSet))
         if i == len(tenhouLine) - 1:
             initialKyokuPoint = kyoku['log'][0][1]
             tenshuChange = kyoku['log'][0][16][1]
@@ -566,6 +572,7 @@ def parseHanchan(tenhouLine, ruleSet={}):
             for i, x in enumerate(sorted(range(len(defen)), key=lambda y: defen[y], reverse=True)):
                 rank[x] = i + 1
             print(f'final defen {defen} and rank{rank}')
+            point = ruleSet.calculatePoint(defen, rank)
 
         print("=======================")
     kobaPaipu = KobalabPaipu(title, player, qijia, log, defen, rank, point)
