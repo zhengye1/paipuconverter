@@ -306,7 +306,7 @@ class MahjongGroup:
     def checkPinfu(self, ronType):
         if self.isMenzen and self.checkAllShunzi() and ronType == LIANGMIAN and \
                 (self.duizi < 40 or (
-                41 <= self.duizi <= 44 and self.duizi != self.selfWind + 41 and self.duizi != self.placeWind + 41)):
+                        41 <= self.duizi <= 44 and self.duizi != self.selfWind + 41 and self.duizi != self.placeWind + 41)):
             self.yakus.append(Yaku(YAKU_LIST[3], 1))
             self.isPinfuKei = True
 
@@ -330,7 +330,7 @@ class MahjongGroup:
 
     def checkYakuHai(self):
         for mianzi in self.mianzis:
-            if mianzi.mianziType == KEZI:
+            if mianzi.mianziType == KEZI or mianzi.mianziType == GANG:
                 # 场风
                 if mianzi.startTile == self.placeWind + 41:
                     self.yakus.append(Yaku(YAKU_LIST[6] + ' ' + YAKUHAI[0], 1))
@@ -428,11 +428,11 @@ class MahjongGroup:
     def checkSanAnKou(self, ronType):
         for i in range(len(self.mianzis)):
             for j in range(i + 1, len(self.mianzis)):
-                for k in range(i + 2, len(self.mianzis)):
+                for k in range(j + 1, len(self.mianzis)):
                     fMianzi = self.mianzis[i]
                     sMianzi = self.mianzis[j]
                     tMianzi = self.mianzis[k]
-                    if (fMianzi.mianziType >= KEZI and sMianzi.mianziType >= KEZI and tMianzi.mianziType >= KEZI) and \
+                    if (fMianzi.mianziType == KEZI and sMianzi.mianziType == KEZI and tMianzi.mianziType == KEZI) and \
                             (not fMianzi.fulou and not sMianzi.fulou and not tMianzi.fulou):
                         if self.ronTile in [fMianzi.startTile, sMianzi.startTile,
                                             tMianzi.startTile] and not self.isZimo and ronType == SHUANGPENG:

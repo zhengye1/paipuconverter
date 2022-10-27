@@ -56,6 +56,7 @@ def tenhouNumToPai(tenhouNum, pai=None):
         wordToConvert = tenhouNum[1:]
         riichi = '*'
         if int(wordToConvert) == 60:
+            wordToConvert = pai
             tsumokiri = '_'
     elif tenhouNum == 60:
         wordToConvert = pai
@@ -186,6 +187,7 @@ def buildHands(zimoHand, fulouHand, agariPai=None):
     if len(fulouHand) != 0:
         handStr = handStr + ',' + ','.join(fulouHand)
 
+        print(f'fulou hand {fulouHand} final hand string {handStr}')
     return handStr
 
 
@@ -199,6 +201,13 @@ def resetYifa(riichiYifa, player=-1):
                 riichiYifa[i] = 'R'
             else:
                 riichiYifa[i] = ''
+
+
+riichiYifa = ['', '', '', '']  # 检查立直一发的
+
+
+def resetRiichiYifa():
+    riichiYifa = ['', '', '', '']
 
 
 def parseKyoku(kyokuReport, ruleSet=None):
@@ -280,7 +289,7 @@ def parseKyoku(kyokuReport, ruleSet=None):
     isHaidi = False
     isHedi = False
     isQiangGang = False
-    riichiYifa = ['', '', '', '']  # 检查立直一发的
+
     if ruleSet and not ruleSet.yifa:
         RIICHI_YIFA = 'R'
     else:
@@ -289,7 +298,7 @@ def parseKyoku(kyokuReport, ruleSet=None):
     remainTile = 70
     tenhouChiiHouCheck = checkTenhouChiiHou(mopaiAction, dapaiAction)
     wReachChanceCheck = checkWReach(mopaiAction, dapaiAction)
-
+    resetRiichiYifa()
     while True:
         if action == 'M':
             mopai = mopaiAction[currentPlayerIndex].pop(0)
@@ -391,14 +400,17 @@ def parseKyoku(kyokuReport, ruleSet=None):
             elif type(dapai) == str and 'k' in dapai:
                 chiPengKang = True
                 junme = -1
+                print(f'fulou dict{fulouDict}')
+                kobaFulouHand[currentPlayerIndex].remove(fulouDict['kobaStr'])
                 fulouDict = fulou(dapai)
-                pLst = ['p'] + fulouDict['showHand']  # 加杠必定纯在已经被碰掉的情况
+                pLst = ['p'] + fulouDict['showHand']  # 加杠必定在已经被碰掉的情况
                 index = fulouHand[currentPlayerIndex].index(pLst)
                 fulouHand[currentPlayerIndex][index][0] = 'k'
                 fulouHand[currentPlayerIndex][index].append(fulouDict['fulouPai'])
                 gang = GangWrapper(PaiAction(currentPlayerIndex, m=fulouDict['kobaStr']))
                 gameStep.append(gang)
                 tenhouShoupai[currentPlayerIndex].remove(fulouDict['fulouPai'])
+                kobaFulouHand[currentPlayerIndex].append(fulouDict['kobaStr'])
                 if terminateCondition(mopaiAction, mopaiLength, dapaiAction, dapaiLength)['terminate']:
                     isQiangGang = True
                     agariPai = dapai
@@ -411,10 +423,14 @@ def parseKyoku(kyokuReport, ruleSet=None):
             else:
                 if dapai == 'r60' or dapai == 60:
                     kobaPai = tenhouNumToPai(dapai, mopai)
+                    if type(dapai) == str and 'r' in dapai:
+                        riichiYifa[currentPlayerIndex] = RIICHI_YIFA
                     dapai = mopai  # 因为是摸切
                     tenhouShoupai[currentPlayerIndex].remove(mopai)
+
                 elif type(dapai) == str and 'r' in dapai:
                     kobaPai = tenhouNumToPai(dapai)
+                    riichiYifa[currentPlayerIndex] = RIICHI_YIFA
                     tenhouShoupai[currentPlayerIndex].remove(int(dapai[1:]))
                 else:
                     kobaPai = tenhouNumToPai(dapai)
@@ -473,6 +489,7 @@ def parseKyoku(kyokuReport, ruleSet=None):
             else:
                 agariPlayer = (gameResult[index + 1][0] - ju) % 4
                 houjyuPlayer = (gameResult[index + 1][1] - ju) % 4
+
                 agariShoupai = buildHands(tenhouShoupai[agariPlayer], kobaFulouHand[agariPlayer], agariPai)
                 print(
                     f'jushu {jushu} Ron by {agariPlayer} <- {houjyuPlayer} with hand {agariShoupai} and agaripai {agariPai}')
@@ -500,6 +517,7 @@ def parseKyoku(kyokuReport, ruleSet=None):
                 g.finalCheck()
 
             group.sort(key=lambda x: (x.score, x.fan, x.fu), reverse=True)
+
             agariGroup = group[0]
             baojia = houjyuPlayer if ronFormat == 'R' else None
             fubaopai = None if len(fubaopaiLst) == 0 else [tenhouNumToPai(tile) for tile in fubaopaiLst]
@@ -509,7 +527,6 @@ def parseKyoku(kyokuReport, ruleSet=None):
             damanguan = 1 if len(agariGroup.yakumans) > 0 else None
             hupai = [yakuman for yakuman in agariGroup.yakumans] if len(agariGroup.yakumans) > 0 \
                 else [yaku for yaku in agariGroup.yakus]
-
             hule = Hule(l=agariPlayer, shoupai=agariShoupai, baojia=baojia,
                         fubaopai=fubaopai,
                         fu=fu, fanshu=fan, damanguan=damanguan,
@@ -517,13 +534,20 @@ def parseKyoku(kyokuReport, ruleSet=None):
             huleWrapper = HuleWrapper(hule)
             gameStep.append(huleWrapper)
     else:
+        status = ''
         print(f'Ryukyoku')
-        fenpei = gameResult[1]
-        fenpei = fenpei[jushu:] + fenpei[0:jushu]
+        print(f'riichi yifa{riichiYifa}')
+        if len(gameResult) == 1:
+            # 全员听牌或者没听
+            status = gameResult[0]
+            fenpei = [0, 0, 0, 0]
+        else:
+            fenpei = gameResult[1]
+            fenpei = fenpei[jushu:] + fenpei[0:jushu]
         print(f'流局分数分配{fenpei}')
         shoupai = []
         for i, fenshu in enumerate(fenpei):
-            if fenshu > 0:
+            if fenshu > 0 or status == '全員聴牌':
                 shoupai.append(buildHands(tenhouShoupai[i], kobaFulouHand[i]))
             else:
                 shoupai.append('')
@@ -568,6 +592,10 @@ def parseHanchan(tenhouLine, ruleSet=None):
             tenshuChange = kyoku['log'][0][16][1]
             print(f'all last initial:{initialKyokuPoint} and tenshu change: {tenshuChange}')
             defen = [initialKyokuPoint[i] + tenshuChange[i] for i in range(4)]
+            riichiYifaOriginal = riichiYifa[1:] + [riichiYifa[0]]
+            print(f'riichiyifa{riichiYifaOriginal}')
+            defen = [defen[i] - 1000 if 'R' in riichiYifaOriginal[i] else defen[i] for i in range(4)]
+
             rank = [0] * len(defen)
             for i, x in enumerate(sorted(range(len(defen)), key=lambda y: defen[y], reverse=True)):
                 rank[x] = i + 1
