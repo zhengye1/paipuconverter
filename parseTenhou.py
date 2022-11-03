@@ -120,6 +120,7 @@ def fulou(tenhouPai):
             kobaFulou = kobaFulou + DUIJIA_NOTION + kobaFulou[1]
         elif kIndex == 4:
             kobaFulou = kobaFulou + XIAJIA_NOTATION + kobaFulou[1]
+        fulouDict['originalKobaStr'] = kobaFulou[0:-1]
         fulouDict['kobaStr'] = kobaFulou
         fulouDict['fulouType'] = 'k'
         fulouDict['fulouPai'] = int(tenhouPai[kIndex + 1:kIndex + 3])
@@ -179,7 +180,7 @@ def terminateCondition(mopaiAction, mopaiLength, dapaiAction, dapaiLength):
     return terminateDict
 
 
-def buildHands(zimoHand, fulouHand, agariPai=None):
+def buildHands(zimoHand, fulouHand, agariPai=None, agariType=None):
     if agariPai:
         handStr = listHandToKobaStr(zimoHand) + tenhouNumToPai(agariPai)
     else:
@@ -197,7 +198,7 @@ def resetYifa(riichiYifa, player=-1):
             riichiYifa[player] = 'R'
     else:
         for i, rI in enumerate(riichiYifa):
-            if 'RI' in rI:
+            if 'RI' in rI or 'R' in rI:
                 riichiYifa[i] = 'R'
             else:
                 riichiYifa[i] = ''
@@ -206,8 +207,9 @@ def resetYifa(riichiYifa, player=-1):
 riichiYifa = ['', '', '', '']  # 检查立直一发的
 
 
-def resetRiichiYifa():
-    riichiYifa = ['', '', '', '']
+def resetRiichiYifa(riichiYIfa):
+    for i, rI in enumerate(riichiYifa):
+        riichiYIfa[i] = ''
 
 
 def parseKyoku(kyokuReport, ruleSet=None):
@@ -298,7 +300,8 @@ def parseKyoku(kyokuReport, ruleSet=None):
     remainTile = 70
     tenhouChiiHouCheck = checkTenhouChiiHou(mopaiAction, dapaiAction)
     wReachChanceCheck = checkWReach(mopaiAction, dapaiAction)
-    resetRiichiYifa()
+    resetRiichiYifa(riichiYifa)
+
     while True:
         if action == 'M':
             mopai = mopaiAction[currentPlayerIndex].pop(0)
@@ -309,19 +312,20 @@ def parseKyoku(kyokuReport, ruleSet=None):
                     if kangExists:
                         kangExists = False
                         isLingShang = True
-                        if previous == 'D':  # 从暗杠来的
-                            baopaiIndex += 1
-                            kaigang = KaiGangWrapper(KaiGang(tenhouNumToPai(baopaiLst[baopaiIndex])))
-                            gameStep.append(kaigang)
+                        if previous == 'D':  # 从加杠来的
+                            if ruleSet and ruleSet.kanAri:
+                                baopaiIndex += 1
+                                kaigang = KaiGangWrapper(KaiGang(tenhouNumToPai(baopaiLst[baopaiIndex])))
+                                gameStep.append(kaigang)
                             gangzimo = GangZimoWrapper(PaiAction(currentPlayerIndex, p=tenhouNumToPai(mopai)))
                             gameStep.append(gangzimo)
-                            tenhouShoupai[currentPlayerIndex].append(mopai)
+                            # tenhouShoupai[currentPlayerIndex].append(mopai)
                             remainTile -= 1
                     if remainTile == 0 and not isLingShang:
                         isHaidi = True
-                    kobaMopai = tenhouNumToPai(mopai)
-                    zimo = ZimoWrapper(PaiAction(currentPlayerIndex, p=kobaMopai))
-                    gameStep.append(zimo)
+                    # kobaMopai = tenhouNumToPai(mopai)
+                    # zimo = ZimoWrapper(PaiAction(currentPlayerIndex, p=kobaMopai))
+                    # gameStep.append(zimo)
                     break
 
             else:
@@ -329,8 +333,8 @@ def parseKyoku(kyokuReport, ruleSet=None):
                 if kangExists and previous == 'D':
                     resetYifa(riichiYifa)
                     kangExists = False
-                    baopaiIndex += 1
                     if ruleSet and ruleSet.kanAri:
+                        baopaiIndex += 1
                         kaigang = KaiGangWrapper(KaiGang(tenhouNumToPai(baopaiLst[baopaiIndex])))
                         gameStep.append(kaigang)
                     gangzimo = GangZimoWrapper(PaiAction(currentPlayerIndex, p=tenhouNumToPai(mopai)))
@@ -400,9 +404,9 @@ def parseKyoku(kyokuReport, ruleSet=None):
             elif type(dapai) == str and 'k' in dapai:
                 chiPengKang = True
                 junme = -1
-                print(f'fulou dict{fulouDict}')
-                kobaFulouHand[currentPlayerIndex].remove(fulouDict['kobaStr'])
                 fulouDict = fulou(dapai)
+                kobaFulouHand[currentPlayerIndex].remove(fulouDict['originalKobaStr'])
+
                 pLst = ['p'] + fulouDict['showHand']  # 加杠必定在已经被碰掉的情况
                 index = fulouHand[currentPlayerIndex].index(pLst)
                 fulouHand[currentPlayerIndex][index][0] = 'k'
@@ -453,12 +457,17 @@ def parseKyoku(kyokuReport, ruleSet=None):
                     shangjia = (currentPlayerIndex + 3) % 4
                     duijia = (currentPlayerIndex + 2) % 4
                     xiajia = (currentPlayerIndex + 1) % 4
-                    if len(mopaiAction[duijia]) != 0 and bool(re.search('[pm]', str(mopaiAction[duijia][0]))) \
-                            and str(dapai) in mopaiAction[duijia][0]:
+                    duijiaMopai = mopaiAction[duijia]
+                    shangjiaMopai = mopaiAction[shangjia]
+                    xiajiaMopai = mopaiAction[xiajia]
+                    if len(duijiaMopai) != 0 and bool(re.search('[pm]', str(duijiaMopai[0]))) and \
+                            (str(duijiaMopai[0]).find('p') == 2 or str(duijiaMopai[0]).find('m') == 2)  \
+                            and str(dapai) in duijiaMopai[0]:
                         junme = -1
                         currentPlayerIndex = duijia
-                    elif len(mopaiAction[shangjia]) != 0 and bool(re.search('[pm]', str(mopaiAction[shangjia][0]))) \
-                            and str(dapai) in mopaiAction[shangjia][0]:
+                    elif len(shangjiaMopai) != 0 and bool(re.search('[pm]', str(shangjiaMopai[0]))) and \
+                            (str(shangjiaMopai[0]).find('p') == 4 or str(shangjiaMopai[0]).find('m') == 4) \
+                            and str(dapai) in shangjiaMopai[0]:
                         junme = -1
                         currentPlayerIndex = shangjia
                     else:
@@ -481,21 +490,23 @@ def parseKyoku(kyokuReport, ruleSet=None):
             if terminateDict['terminateBy'] == 'Z':
                 # find the correct zimo place
                 agariShoupai = buildHands(tenhouShoupai[currentPlayerIndex], kobaFulouHand[currentPlayerIndex],
-                                          agariPai)
+                                          agariPai, agariType=terminateDict['terminateBy'])
                 agariPlayer = currentPlayerIndex
                 ronFormat = 'Z'
-                print(agariShoupai)
+                print(f'Agari shoupai {agariShoupai}')
 
             else:
                 agariPlayer = (gameResult[index + 1][0] - ju) % 4
                 houjyuPlayer = (gameResult[index + 1][1] - ju) % 4
 
-                agariShoupai = buildHands(tenhouShoupai[agariPlayer], kobaFulouHand[agariPlayer], agariPai)
+                agariShoupai = buildHands(tenhouShoupai[agariPlayer], kobaFulouHand[agariPlayer], agariPai,
+                                          terminateDict['terminateBy'])
                 print(
                     f'jushu {jushu} Ron by {agariPlayer} <- {houjyuPlayer} with hand {agariShoupai} and agaripai {agariPai}')
                 ronFormat = 'R'
             finalInner = [h if h // 10 != 5 else (h % 10 * 10) for h in tenhouShoupai[agariPlayer]]
             finalInner.append(agariPai)
+
             transfer = MahjongTransfer(finalInner, fulouHand[agariPlayer], agariPai)
             transfer.ronFormat = ronFormat
             group = transfer.toMahjongGroup()
@@ -517,10 +528,10 @@ def parseKyoku(kyokuReport, ruleSet=None):
                 g.finalCheck()
 
             group.sort(key=lambda x: (x.score, x.fan, x.fu), reverse=True)
-
             agariGroup = group[0]
             baojia = houjyuPlayer if ronFormat == 'R' else None
             fubaopai = None if len(fubaopaiLst) == 0 else [tenhouNumToPai(tile) for tile in fubaopaiLst]
+            print(f'agari group {agariGroup.fu} fu {agariGroup.fan} fan')
             fu = agariGroup.fu if len(agariGroup.yakumans) == 0 else None
             fan = agariGroup.fan if len(agariGroup.yakumans) == 0 else None
             defen = agariGroup.score
@@ -581,6 +592,7 @@ def parseHanchan(tenhouLine, ruleSet=None):
     point = [0, 0, 0, 0]
     for i, kyokuStr in enumerate(tenhouLine):
         kyoku = json.loads(kyokuStr)
+
         # 半庄开始
         if i == 0:
             title = kyoku['title'][0]

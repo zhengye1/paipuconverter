@@ -75,6 +75,7 @@ class MahjongGroup:
             self.checkYakus(rt)
             self.fuCalculation(rt)
             self.score = self.getPoint()
+            print(f'{self.fu} fu {self.fan} fan')
             if len(self.yakumans) != 0:
                 self.fu = None
                 self.fan = None
@@ -122,7 +123,7 @@ class MahjongGroup:
                     self.fu = 40
             else:
                 self.fu = 30
-
+            print(f'should come from base {self.fu}')
             # 算有没有跳符情况
             jumpFu = 0
             if self.ruleSet['doubleWind'] and self.placeWind + 41 == self.duizi and self.selfWind + 41 == self.duizi:
@@ -169,11 +170,15 @@ class MahjongGroup:
                         else:
                             jumpFu += 32
 
-            # 看看是跳了几级
-            jumpLevel = (jumpFu - 2) // 10 * 10
+                # 看看是跳了几级
+            if jumpFu > 0:
+                jumpLevel = (jumpFu - 2) // 10 * 10
+            else:
+                jumpLevel = 0
             self.fu += jumpLevel
 
     def getPoint(self):
+        print(f'calculat point {self.fu} fu {self.fan} fan')
         if len(self.yakumans) == 0:
             for yaku in self.yakus:
                 self.fan += yaku.fanshu
