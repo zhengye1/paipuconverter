@@ -155,14 +155,14 @@ def indexCheck(mopaiAction, dapaiAction, mopaiLength, dapaiLength, player):
     return len(mopaiAction[player]) == len(dapaiAction[player]) == 0 and mopaiLength[player] - dapaiLength[player] == 1
 
 
-def terminateCondition(mopaiAction, mopaiLength, dapaiAction, dapaiLength):
+def terminateCondition(mopaiAction, mopaiLength, dapaiAction, dapaiLength, kyukyuExists):
     terminateDict = {'terminate': False, 'terminateBy': ""}
     eastZimoCheck = indexCheck(mopaiAction, dapaiAction, mopaiLength, dapaiLength, EAST)
     southZimoCheck = indexCheck(mopaiAction, dapaiAction, mopaiLength, dapaiLength, SOUTH)
     westZimoCheck = indexCheck(mopaiAction, dapaiAction, mopaiLength, dapaiLength, WEST)
     northZimoCheck = indexCheck(mopaiAction, dapaiAction, mopaiLength, dapaiLength, NORTH)
 
-    terminateByZimo = eastZimoCheck or southZimoCheck or westZimoCheck or northZimoCheck
+    terminateByZimo = not kyukyuExists and (eastZimoCheck or southZimoCheck or westZimoCheck or northZimoCheck)
     if terminateByZimo:
         terminateDict['terminate'] = True
         terminateDict['terminateBy'] = 'Z'
@@ -172,7 +172,7 @@ def terminateCondition(mopaiAction, mopaiLength, dapaiAction, dapaiLength):
         len(mopaiAction[EAST]) == len(mopaiAction[SOUTH]) == len(mopaiAction[WEST]) == len(mopaiAction[NORTH]) \
         == len(dapaiAction[EAST]) == len(dapaiAction[SOUTH]) == len(dapaiAction[WEST]) == len(dapaiAction[NORTH]) == 0
 
-    if terminateByRonOrRyukyoku:
+    if not kyukyuExists and terminateByRonOrRyukyoku:
         terminateDict['terminate'] = True
         terminateDict['terminateBy'] = 'R'  # R for ron or ryukyoku
         return terminateDict
@@ -212,7 +212,7 @@ def resetRiichiYifa(riichiYIfa):
         riichiYIfa[i] = ''
 
 
-def checkKyuKyu(gameResult, mopaiAction, dapaiAction):
+def checkKyuKyu(gameResult, mopaiAction, dapaiAction,):
     kyukyuResult = "九種九牌" in gameResult[0]
     if kyukyuResult:
         if len(mopaiAction[EAST]) == 1 and len(dapaiAction[EAST]) == 0:
@@ -319,8 +319,7 @@ def parseKyoku(kyokuReport, ruleSet=None):
     wReachChanceCheck = checkWReach(mopaiAction, dapaiAction)
 
     gameResult = kyokuReport[0][16]
-    kyukyuPlayer = -1
-    kyukyuExists = False
+
     # 九种九牌检查
     if ruleSet.kyukyu:
         kyukyuExists, kyukyuPlayer = checkKyuKyu(gameResult, mopaiAction, dapaiAction)
@@ -328,11 +327,9 @@ def parseKyoku(kyokuReport, ruleSet=None):
     resetRiichiYifa(riichiYifa)
 
     while True:
-        if kyukyuExists:
-            break;
         if action == 'M':
             mopai = mopaiAction[currentPlayerIndex].pop(0)
-            terminateDict = terminateCondition(mopaiAction, mopaiLength, dapaiAction, dapaiLength)
+            terminateDict = terminateCondition(mopaiAction, mopaiLength, dapaiAction, dapaiLength, kyukyuExists)
             if terminateDict['terminate']:
                 if terminateDict['terminateBy'] == 'Z':
                     agariPai = mopai
@@ -405,6 +402,9 @@ def parseKyoku(kyokuReport, ruleSet=None):
                     action = 'D'
                     previous = 'M'
                     remainTile -= 1
+                if kyukyuExists:
+                    if kyukyuPlayer == currentPlayerIndex:
+                        break
         else:
             dapai = dapaiAction[currentPlayerIndex].pop(0)
             if type(dapai) == str and 'a' in dapai:
@@ -470,7 +470,7 @@ def parseKyoku(kyokuReport, ruleSet=None):
                 gameStep.append(kobaDapai)
                 action = 'M'
                 previous = 'D'
-                terminateDict = terminateCondition(mopaiAction, mopaiLength, dapaiAction, dapaiLength)
+                terminateDict = terminateCondition(mopaiAction, mopaiLength, dapaiAction, dapaiLength, kyukyuExists)
                 # 打出去的要是结束如果没牌暂且算上是河底
                 if terminateDict['terminate'] and terminateDict['terminateBy'] == 'R':
                     agariPai = mopai if dapai == 'r60' or dapai == 60 else dapai
@@ -488,7 +488,7 @@ def parseKyoku(kyokuReport, ruleSet=None):
                     shangjiaMopai = mopaiAction[shangjia]
                     xiajiaMopai = mopaiAction[xiajia]
                     if len(duijiaMopai) != 0 and bool(re.search('[pm]', str(duijiaMopai[0]))) and \
-                            (str(duijiaMopai[0]).find('p') == 2 or str(duijiaMopai[0]).find('m') == 2)  \
+                            (str(duijiaMopai[0]).find('p') == 2 or str(duijiaMopai[0]).find('m') == 2) \
                             and str(dapai) in duijiaMopai[0]:
                         junme = -1
                         currentPlayerIndex = duijia
@@ -502,7 +502,6 @@ def parseKyoku(kyokuReport, ruleSet=None):
                                 and str(dapai) in mopaiAction[xiajia][0]:
                             junme = -1
                         currentPlayerIndex = xiajia
-
 
     print(f'{"东" if changfeng == 0 else "南"}{jushu + 1}局 {changbang}本场')
     if '和了' in gameResult[0]:
@@ -585,7 +584,7 @@ def parseKyoku(kyokuReport, ruleSet=None):
         print(f'流局分数分配{fenpei}')
         shoupai = []
         for i, fenshu in enumerate(fenpei):
-            if kyukyuPlayer == i or fenshu > 0 or status == '全員聴牌' :
+            if kyukyuPlayer == i or fenshu > 0 or status == '全員聴牌':
                 shoupai.append(buildHands(tenhouShoupai[i], kobaFulouHand[i]))
             else:
                 shoupai.append('')
