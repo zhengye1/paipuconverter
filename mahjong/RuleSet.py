@@ -1,6 +1,7 @@
 class RuleSet:
     def __init__(self, startPoint, endPoint, placementBonus, akaAri, uraAri, kanAri, yifa, kiriageMangan, doubleWind,
-                 ryuiisouWithHatsu, rinnsyantsumofu, multipleYakuman, baiYakuman, tiebreaker, allLastRiichiBou):
+                 ryuiisouWithHatsu, rinnsyantsumofu, multipleYakuman, baiYakuman, tiebreaker, allLastRiichiBou,
+                 kyukyu=False, allReach=False, allWindDiscard=False, fourKang=False):
         self.startPoint = startPoint
         self.endPoint = endPoint
         self.placementBonus = placementBonus
@@ -16,6 +17,10 @@ class RuleSet:
         self.baiYakuman = baiYakuman
         self.tiebreaker = tiebreaker
         self.allLastRiichiBou = allLastRiichiBou  # removed or top
+        self.kyukyu = kyukyu
+        self.allReach = allReach
+        self.allWindDiscard=allWindDiscard
+        self.fourKang = fourKang
 
     def calculatePoint(self, defen, rank):
         # calculate the actual point
@@ -59,5 +64,5 @@ class RuleSet:
                     actualPlacementBonus[0] = actualPlacementBonus[1] = (copyVer[0] + copyVer[1]) / 2
         point = []
         for i in range(len(defen)):
-            point.append((defen[i] - self.endPoint)/1000 + actualPlacementBonus[rank[i] - 1])
+            point.append((defen[i] - self.endPoint) / 1000 + actualPlacementBonus[rank[i] - 1])
         return point

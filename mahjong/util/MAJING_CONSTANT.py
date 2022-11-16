@@ -39,4 +39,4 @@ M_LEAGUE_RULE = RuleSet(25000, 30000, [50, 10, -10, -30], True, True, True, True
 SAIKYOSEN_RULE = RuleSet(30000, 30000, [30, 10, -10, -30], False, True, True, True, True, 2, False, False, True, False,
                          "divided", "removed")
 A_RULE = RuleSet(30000, 30000, [[12, -1, -3, -8], [8, 4, -4, -8], [8, 3, 1, -12]], False, False, False, False,
-                 False, 4, True, False, True, False, "divided", "removed")
+                 False, 4, True, False, True, False, "divided", "removed", True)

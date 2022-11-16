@@ -212,6 +212,23 @@ def resetRiichiYifa(riichiYIfa):
         riichiYIfa[i] = ''
 
 
+def checkKyuKyu(gameResult, mopaiAction, dapaiAction):
+    kyukyuResult = "九種九牌" in gameResult[0]
+    if kyukyuResult:
+        if len(mopaiAction[EAST]) == 1 and len(dapaiAction[EAST]) == 0:
+            kyukyuPlayer = EAST
+        elif len(mopaiAction[SOUTH]) == 1 and len(dapaiAction[SOUTH]) == 0:
+            kyukyuPlayer = SOUTH
+        elif len(mopaiAction[WEST]) == 1 and len(dapaiAction[WEST]) == 0:
+            kyukyuPlayer = WEST
+        else:
+            kyukyuPlayer = NORTH
+    else:
+        kyukyuPlayer = -1
+
+    return kyukyuResult, kyukyuPlayer
+
+
 def parseKyoku(kyokuReport, ruleSet=None):
     # return Qipai object
     ju = kyokuReport[0][0][0]
@@ -300,9 +317,19 @@ def parseKyoku(kyokuReport, ruleSet=None):
     remainTile = 70
     tenhouChiiHouCheck = checkTenhouChiiHou(mopaiAction, dapaiAction)
     wReachChanceCheck = checkWReach(mopaiAction, dapaiAction)
+
+    gameResult = kyokuReport[0][16]
+    kyukyuPlayer = -1
+    kyukyuExists = False
+    # 九种九牌检查
+    if ruleSet.kyukyu:
+        kyukyuExists, kyukyuPlayer = checkKyuKyu(gameResult, mopaiAction, dapaiAction)
+
     resetRiichiYifa(riichiYifa)
 
     while True:
+        if kyukyuExists:
+            break;
         if action == 'M':
             mopai = mopaiAction[currentPlayerIndex].pop(0)
             terminateDict = terminateCondition(mopaiAction, mopaiLength, dapaiAction, dapaiLength)
@@ -476,7 +503,7 @@ def parseKyoku(kyokuReport, ruleSet=None):
                             junme = -1
                         currentPlayerIndex = xiajia
 
-    gameResult = kyokuReport[0][16]
+
     print(f'{"东" if changfeng == 0 else "南"}{jushu + 1}局 {changbang}本场')
     if '和了' in gameResult[0]:
         print(f'RonOrZimo')
@@ -558,11 +585,16 @@ def parseKyoku(kyokuReport, ruleSet=None):
         print(f'流局分数分配{fenpei}')
         shoupai = []
         for i, fenshu in enumerate(fenpei):
-            if fenshu > 0 or status == '全員聴牌':
+            if kyukyuPlayer == i or fenshu > 0 or status == '全員聴牌' :
                 shoupai.append(buildHands(tenhouShoupai[i], kobaFulouHand[i]))
             else:
                 shoupai.append('')
-        pinju = PingjuWrapper(Pingju(name='流局', shoupai=shoupai, fenpei=fenpei))
+
+        if kyukyuExists:
+            ryukyokuReason = '九種九牌'
+        else:
+            ryukyokuReason = '流局'
+        pinju = PingjuWrapper(Pingju(name=ryukyokuReason, shoupai=shoupai, fenpei=fenpei))
         gameStep.append(pinju)
 
         print(

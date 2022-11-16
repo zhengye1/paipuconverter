@@ -62,6 +62,9 @@ class MahjongGroup:
         self.isYifa = isYifa
         self.isLingShang = isLingShang
         self.isQiangGang = isQiangGang
+        self.isHaidi = isHaidi
+        self.isHedi = isHedi
+
 
     def finalCheck(self):
         ronType = self.getRonType()
